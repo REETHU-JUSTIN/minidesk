@@ -142,7 +142,7 @@ The brand color changes from indigo to teal. You edit `--color-primary` in one f
 Styling with small single-purpose classes in the markup. The benefits are speed and consistency. The downside is long class lists, which I handle by putting them in shared components.
 
 **How does it keep CSS small?**
-It scans my files for class names and generates only those. MiniDesk's built CSS is about 22 KB before compression.
+It scans my files for class names and generates only those. MiniDesk's built CSS is about 24 KB before compression.
 
 **How did you keep styling consistent?**
 Tokens for brand colors, Tailwind's spacing scale, and shared components like `Button`, `Card` and `Badge`, so pages never style those from scratch.

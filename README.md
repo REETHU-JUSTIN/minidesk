@@ -2,7 +2,7 @@
 
 A small support ticket management system, built to learn full-stack development with React, TypeScript, Node.js, Express and PostgreSQL.
 
-**Current status: Phase 2 of 11.** The interface is a static preview using typed sample data. Forms don't submit, search and filters don't filter, and there is no login or backend yet.
+**Current status: Phase 3 of 11.** The interface runs on typed sample data. Search, filters and form validation work, but there is no login or backend yet, so nothing is saved.
 
 ## Run the frontend
 
@@ -37,6 +37,7 @@ Run these from the `frontend` folder:
 | `typescript` | Static types |
 | `tailwindcss`, `@tailwindcss/vite` | Utility-first CSS |
 | `lucide-react` | Icons |
+| `react-hook-form` | Form state and validation |
 | `oxlint` | Linter, included by the Vite template |
 
 ## Learning material

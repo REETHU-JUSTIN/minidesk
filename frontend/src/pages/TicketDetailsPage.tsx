@@ -1,31 +1,57 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { PriorityBadge, StatusBadge } from '../components/common/Badge'
 import { Button } from '../components/common/Button'
 import { Card } from '../components/common/Card'
 import { ErrorMessage } from '../components/common/ErrorMessage'
 import { Modal } from '../components/common/Modal'
-import { Select } from '../components/common/Select'
-import { Textarea } from '../components/common/Textarea'
-import { formatDate, formatDateTime } from '../utils/formatDate'
-import { previewComments, previewTickets, previewUsers } from '../utils/previewData'
-import { categoryLabels, statusLabels, ticketStatuses } from '../utils/ticketLabels'
+import { CommentForm } from '../components/tickets/CommentForm'
+import { CommentList } from '../components/tickets/CommentList'
+import { TicketManagePanel } from '../components/tickets/TicketManagePanel'
+import type { Ticket, TicketStatus } from '../types'
+import { formatDate } from '../utils/formatDate'
+import { previewComments, previewCurrentUser, previewTickets, previewUsers } from '../utils/previewData'
+import { categoryLabels } from '../utils/ticketLabels'
 
 // A fixed ticket for now. Phase 4 reads the id from the URL.
 const PREVIEW_TICKET_ID = 1006
 
-export function TicketDetailsPage() {
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+const agents = previewUsers.filter((user) => user.role === 'agent')
 
-  // find returns the ticket, or undefined if nothing matches.
+export function TicketDetailsPage() {
   const ticket = previewTickets.find((item) => item.id === PREVIEW_TICKET_ID)
 
-  // TypeScript requires this check. After it, it knows that ticket can't be undefined.
+  // Hooks must run in the same order on every render, so they can't come after an early return.
+  // Moving the hooks into a child component that only renders when the ticket exists solves this.
   if (!ticket) {
     return <ErrorMessage message="We couldn't find that ticket." />
   }
 
-  const comments = previewComments.filter((comment) => comment.ticketId === ticket.id)
-  const agents = previewUsers.filter((user) => user.role === 'agent')
+  return <TicketDetails ticket={ticket} />
+}
+
+function TicketDetails({ ticket }: { ticket: Ticket }) {
+  // These changes last until the page reloads. Phase 7 saves them through the API.
+  const [status, setStatus] = useState<TicketStatus>(ticket.status)
+  const [assignedAgentId, setAssignedAgentId] = useState(ticket.assignedAgentId)
+  const [comments, setComments] = useState(() => previewComments.filter((comment) => comment.ticketId === ticket.id))
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+
+  // Modal's effect depends on onClose. A stable function stops that effect from
+  // re-running, and pulling keyboard focus back, whenever this page re-renders.
+  const closeDeleteModal = useCallback(() => setIsDeleteOpen(false), [])
+
+  function handleAddComment(message: string) {
+    const newComment = {
+      id: Date.now(), // a temporary id, until the database creates real ones
+      ticketId: ticket.id,
+      userId: previewCurrentUser.id,
+      authorName: previewCurrentUser.name,
+      message,
+      createdAt: new Date().toISOString(),
+    }
+    // State is never changed directly. We create a new array, and React sees the change.
+    setComments((currentComments) => [...currentComments, newComment])
+  }
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -37,7 +63,7 @@ export function TicketDetailsPage() {
             </p>
             <h2 className="mt-1 text-xl font-semibold">{ticket.title}</h2>
             <div className="mt-3 flex gap-2">
-              <StatusBadge status={ticket.status} />
+              <StatusBadge status={status} />
               <PriorityBadge priority={ticket.priority} />
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-700">{ticket.description}</p>
@@ -45,50 +71,20 @@ export function TicketDetailsPage() {
         </Card>
 
         <Card title={`Comments (${comments.length})`}>
-          <ul className="divide-y divide-slate-200">
-            {comments.map((comment) => (
-              <li key={comment.id} className="px-5 py-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <p className="text-sm font-medium">{comment.authorName}</p>
-                  <p className="text-xs text-slate-500">{formatDateTime(comment.createdAt)}</p>
-                </div>
-                <p className="mt-1 text-sm leading-6 text-slate-700">{comment.message}</p>
-              </li>
-            ))}
-          </ul>
-          <form className="space-y-3 border-t border-slate-200 p-5" onSubmit={(event) => event.preventDefault()}>
-            <Textarea id="comment" label="Add a comment" rows={3} placeholder="Write your reply..." />
-            <div className="flex justify-end">
-              <Button type="submit">Post Comment</Button>
-            </div>
-          </form>
+          <CommentList comments={comments} />
+          <CommentForm onAddComment={handleAddComment} />
         </Card>
       </div>
 
       <div className="space-y-6">
-        <Card title="Manage">
-          <div className="space-y-4 p-5">
-            <Select id="status" label="Status" defaultValue={ticket.status}>
-              {ticketStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {statusLabels[status]}
-                </option>
-              ))}
-            </Select>
-            {/* An unassigned ticket has a null agent id, so ?? selects the "Unassigned" option */}
-            <Select id="agent" label="Assigned agent" defaultValue={ticket.assignedAgentId ?? ''}>
-              <option value="">Unassigned</option>
-              {agents.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name}
-                </option>
-              ))}
-            </Select>
-            <Button variant="danger" className="w-full" onClick={() => setIsDeleteOpen(true)}>
-              Delete Ticket
-            </Button>
-          </div>
-        </Card>
+        <TicketManagePanel
+          status={status}
+          assignedAgentId={assignedAgentId}
+          agents={agents}
+          onStatusChange={setStatus}
+          onAgentChange={setAssignedAgentId}
+          onDeleteClick={() => setIsDeleteOpen(true)}
+        />
 
         <Card title="Customer">
           <dl className="space-y-3 p-5 text-sm">
@@ -111,13 +107,13 @@ export function TicketDetailsPage() {
       <Modal
         isOpen={isDeleteOpen}
         title="Delete this ticket?"
-        onClose={() => setIsDeleteOpen(false)}
+        onClose={closeDeleteModal}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>
+            <Button variant="secondary" onClick={closeDeleteModal}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={() => setIsDeleteOpen(false)}>
+            <Button variant="danger" onClick={closeDeleteModal}>
               Delete Ticket
             </Button>
           </>

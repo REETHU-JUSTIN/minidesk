@@ -1,6 +1,6 @@
 // TEMPORARY sample data and helpers, so pages work before the backend exists.
 // Phase 7 replaces all of this with real API calls and deletes this file.
-import type { DashboardStats, PaginatedResponse, Ticket, TicketComment, User } from '../types'
+import type { DashboardStats, PaginatedResponse, Ticket, TicketComment, TicketFilterValues, User } from '../types'
 
 export const previewUsers: User[] = [
   { id: 1, name: 'Alex Morgan', email: 'admin@example.com', role: 'admin', createdAt: '2026-09-01T12:00:00Z' },
@@ -166,6 +166,18 @@ export function getDashboardStats(tickets: Ticket[]): DashboardStats {
     inProgress: countByStatus('in_progress'),
     resolved: countByStatus('resolved'),
   }
+}
+
+// In Phase 6, SQL WHERE and ILIKE do this job on the server.
+export function filterTickets(tickets: Ticket[], filters: TicketFilterValues): Ticket[] {
+  const searchText = filters.search.trim().toLowerCase()
+
+  return tickets.filter((ticket) => {
+    const matchesSearch = ticket.title.toLowerCase().includes(searchText)
+    const matchesStatus = filters.status === '' || ticket.status === filters.status
+    const matchesPriority = filters.priority === '' || ticket.priority === filters.priority
+    return matchesSearch && matchesStatus && matchesPriority
+  })
 }
 
 // <T> makes this generic: it works with a list of anything and keeps the item type.

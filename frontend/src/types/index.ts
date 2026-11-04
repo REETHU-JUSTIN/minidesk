@@ -33,6 +33,16 @@ export interface Ticket {
   updatedAt: string
 }
 
+// Pick creates a new type from selected fields, so these can't drift from Ticket.
+export type CreateTicketInput = Pick<Ticket, 'title' | 'description' | 'category' | 'priority'>
+
+// An empty string means "no filter" for that field.
+export interface TicketFilterValues {
+  search: string
+  status: TicketStatus | ''
+  priority: TicketPriority | ''
+}
+
 // Named TicketComment because browsers already have a built-in type called Comment.
 export interface TicketComment {
   id: number

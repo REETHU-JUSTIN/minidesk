@@ -1,7 +1,7 @@
-import { Bell, Menu, Search } from 'lucide-react'
-import { getInitials } from '../../utils/getInitials'
-import { previewCurrentUser } from '../../utils/previewData'
+import { Menu, Search } from 'lucide-react'
 import { Button } from '../common/Button'
+import { NotificationMenu } from './NotificationMenu'
+import { ProfileMenu } from './ProfileMenu'
 
 interface TopNavProps {
   title: string
@@ -28,16 +28,8 @@ export function TopNav({ title, onOpenMenu }: TopNavProps) {
           />
         </div>
 
-        <Button variant="ghost" className="!p-2" aria-label="Notifications">
-          <Bell className="size-5" aria-hidden="true" />
-        </Button>
-
-        <button type="button" aria-label="Open profile menu" className="flex items-center gap-2 rounded-lg p-1 hover:bg-slate-100 md:pr-2">
-          <span className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
-            {getInitials(previewCurrentUser.name)}
-          </span>
-          <span className="hidden text-sm font-medium md:block">{previewCurrentUser.name}</span>
-        </button>
+        <NotificationMenu />
+        <ProfileMenu />
       </div>
     </header>
   )

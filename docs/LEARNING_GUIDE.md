@@ -369,4 +369,180 @@ You can use the same trick when you want to test a type.
 3. Write `getOverdueTickets(tickets: Ticket[]): Ticket[]`, which returns unresolved tickets created before a given date.
 4. Write `countTicketsByPriority(tickets: Ticket[]): Record<TicketPriority, number>` using `reduce`.
 5. Write a generic `getFirstItem<T>(items: T[]): T | undefined`. Hover over the result in your editor when you pass it tickets, then users.
-6. Change `??` to `||` in `<Select id="agent" ... defaultValue={ticket.assignedAgentId ?? ''}>` and explain why it would misbehave if an agent's ID were `0`.
+6. In `TicketManagePanel`, change `value={assignedAgentId ?? ''}` to use `||` and explain why it would misbehave if an agent's ID were `0`.
+
+## Phase 3: React components, props and Hooks
+
+### What works now
+
+| Works now | What's still missing |
+|---|---|
+| Search with a short delay, status and priority filters, Clear filters | They run on sample data in the browser, until Phase 7 |
+| Validation on the login, register, create ticket and comment forms | A valid form still doesn't sign in or save anything (Phase 7) |
+| Adding comments and changing status or agent on a ticket | Changes are lost on reload (Phase 7) |
+| Notification and profile menus | Top bar search (Phase 4). My Tickets shows the same list as All Tickets (Phase 4) |
+| Delete confirmation modal | Its Delete button only closes the modal (Phase 7) |
+
+### Splitting pages into components
+
+`TicketListPage` used to hold all of its own markup. It's now mostly coordination:
+
+```
+TicketListPage          owns: filters, page
+├── TicketFilters       shows the filters and reports changes
+├── TicketTable         shows whichever rows it's given
+└── Pagination          shows the page and reports clicks
+
+TicketDetails           owns: status, agent, comments, modal open or closed
+├── CommentList         shows comments
+├── CommentForm         owns only its own draft text and error
+├── TicketManagePanel   shows the dropdowns and reports changes
+└── Modal
+```
+
+**The pattern:** data flows down through props and events flow up through callback functions. Most children hold no data of their own, so `TicketTable` can display any list of tickets without knowing how it was found. That makes it easy to reuse and test.
+
+**Where state lives:** in the lowest component that needs it. `CommentForm` owns its draft text because nothing else needs it. The finished comments live in `TicketDetails`, because `CommentList` needs them too and the heading shows the count.
+
+### Hooks: where each one is used and why
+
+| Hook | Where | Why it's the right tool here |
+|---|---|---|
+| `useState` | Filters, page, comments, menus | The screen must change when the value changes |
+| `useEffect` | `useDebounce`, `useCloseOnOutside`, `Modal` | Syncing with things outside React: timers, document events and focus |
+| `useRef` | `CommentForm`, both menus, `Modal` | Reaching a DOM element without causing a re-render |
+| `useMemo` | `TicketListPage` | Skips re-filtering on keystrokes that don't change the debounced search |
+| `useCallback` | `TicketListPage`, `TicketDetails` | Keeps a function the same between renders, because something depends on that |
+| `useForm` | `TicketForm`, login, register | React Hook Form's hook, which handles field values, validation and errors |
+
+**Being honest about `useMemo`:** with 8 tickets, filtering is so fast you could never measure the difference. It's here because the pattern is real and interviewers ask about it. In a real project, reach for it only when a calculation is actually slow or when a stable value is needed. It also isn't in the Dashboard as I first planned, because that page has no state and so never re-renders to save anything.
+
+### Important code, line by line
+
+#### `hooks/useDebounce.ts`
+
+```ts
+export function useDebounce<T>(value: T, delay: number): T {
+```
+A custom hook is just a function whose name starts with `use` and which calls other Hooks. The generic means it works with any type of value.
+
+```ts
+  const [debouncedValue, setDebouncedValue] = useState(value)
+```
+A second, delayed copy of the value.
+
+```ts
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+```
+Here's what happens when you type "bug" quickly:
+
+1. Typing `b` starts a 300ms timer.
+2. Typing `u` changes `value`, so React runs the cleanup first, cancelling the first timer. Then it starts a new one.
+3. Typing `g` does the same.
+4. You stop. The last timer finishes, and `debouncedValue` becomes `"bug"`.
+
+Without the cleanup, all three timers would fire. The cleanup is what makes this a debounce.
+
+#### `pages/TicketListPage.tsx`
+
+```ts
+const handleFilterChange = useCallback((changes: Partial<TicketFilterValues>) => {
+  setFilters((currentFilters) => ({ ...currentFilters, ...changes }))
+  setPage(1)
+}, [])
+```
+
+- **`Partial<TicketFilterValues>`:** an object with some or all of the filter fields, so a caller can send only `{ status: 'open' }`.
+- **`setFilters((currentFilters) => ...)`:** the function form reads the latest state. It's the safe choice when the new state depends on the old state.
+- **`{ ...currentFilters, ...changes }`:** copies the old fields, then overwrites the changed ones. Later values win.
+- **`setPage(1)`:** page 2 may not exist in the new results. It's set here rather than in an effect, because it's caused by this event.
+- **`[]`:** state setters never change, so this function never needs recreating.
+
+**Why `memo` and `useCallback` must work together:** in JavaScript, two separately created functions are never equal, even with identical code. `memo` skips a re-render only if every prop is unchanged. Without `useCallback`, each parent render would create a new function, `memo` would see a changed prop, and the optimization would do nothing. During testing, a temporary counter showed `TicketFilters` rendering 0 times across page changes, and rendering again when typing changed its props.
+
+#### `pages/TicketDetailsPage.tsx`: the Rules of Hooks
+
+```tsx
+export function TicketDetailsPage() {
+  const ticket = previewTickets.find(...)
+  if (!ticket) {
+    return <ErrorMessage ... />
+  }
+  return <TicketDetails ticket={ticket} />
+}
+```
+
+React identifies Hooks by the order they're called in, so they must run in the same order on every render. They can't go after an early return, or inside `if` statements or loops. Moving them into a child component that renders only when the ticket exists solves this cleanly, and `ticket` is guaranteed to exist in there.
+
+```ts
+setComments((currentComments) => [...currentComments, newComment])
+```
+State is never changed directly. `comments.push(...)` would keep the same array, so React would see no change and wouldn't update the screen. This builds a new array instead.
+
+```ts
+const [comments, setComments] = useState(() => previewComments.filter(...))
+```
+Lazy initialization: the filter runs only on the first render.
+
+#### `hooks/useCloseOnOutside.ts`
+
+```ts
+const clickedInside = containerRef.current?.contains(event.target as Node)
+if (!clickedInside) onClose()
+```
+`contains` checks whether the clicked element is inside the menu. `as Node` is a type assertion: `event.target` could be something that isn't a page element, and we're telling TypeScript that here it is. Use `as` sparingly, because TypeScript trusts it without checking.
+
+**Why this one is a custom hook:** both menus need exactly the same logic, so there's a real reason to share it.
+
+### Two ways to build a form
+
+MiniDesk has both, so you can compare them.
+
+**By hand: `CommentForm.tsx` (controlled input).** React state holds the value:
+
+```tsx
+const [message, setMessage] = useState('')
+<Textarea value={message} onChange={(event) => setMessage(event.target.value)} />
+```
+
+You write everything yourself: the state, the error, `preventDefault` and the validation. That's fine for one field, but it adds up quickly with four.
+
+**With React Hook Form: `TicketForm.tsx`.**
+
+```tsx
+const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateTicketInput>({ defaultValues })
+<Input error={errors.title?.message} {...register('title', ticketTitleRules)} />
+<form noValidate onSubmit={handleSubmit(submitValidForm)}>
+```
+
+- **`register('title', rules)`:** returns `name`, `onChange`, `onBlur` and `ref`, and the spread passes them to the input.
+- **`handleSubmit(fn)`:** calls `event.preventDefault()`, validates, and calls `fn` only if every field is valid.
+- **`errors.title?.message`:** the message for that field, if there is one. `?.` is needed because there's usually no error.
+
+By default, the library keeps values in the inputs themselves (uncontrolled) rather than in React state, so typing doesn't re-render the whole form. For long forms, that's a real advantage.
+
+**Why `Input` works with `register`:** in React 19, `ref` is a normal prop. It arrives in `...rest` and gets spread onto the real `<input>`. Older React versions needed a wrapper called `forwardRef`, which you'll see in existing code.
+
+**Client validation isn't security.** It gives people fast feedback, but anyone can skip it by calling the API directly. Phase 5 repeats these checks on the server.
+
+### Using `key` to reset state
+
+```tsx
+'my-tickets': { content: <TicketListPage key="my-tickets" /> },
+'all-tickets': { content: <TicketListPage key="all-tickets" /> },
+```
+
+React keeps a component's state if the same component type stays in the same position. Without different keys, filters would carry over from My Tickets to All Tickets. A different `key` tells React it's a different component, so it creates a fresh one with fresh state. Testing confirmed the filters now reset.
+
+### Practice exercises
+
+1. Change the debounce delay from 300 to 2000 in `TicketListPage`, then type in the search box. Say out loud what's happening at each moment. Then change it back.
+2. Remove `clearTimeout` from `useDebounce`, add a `console.log` inside the timer and type quickly. Explain the output. Then restore it.
+3. Add a `console.log` to `TicketFilters`, then remove `useCallback` from `handleClearFilters` and click Next. What changes, and why? Restore it afterwards.
+4. Replace `setComments` with `comments.push(newComment); setComments(comments)`. What breaks, and why? Restore it afterwards.
+5. Add a required "Phone number" field to the register form using `register`, with a rule of your own. Then remove it.
+6. Convert `CommentForm` to React Hook Form, then compare the two versions. Which do you prefer for one field?
+7. Show "Showing X of Y tickets" above the table. Which component should calculate it, and why?

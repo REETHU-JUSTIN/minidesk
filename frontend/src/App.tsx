@@ -16,8 +16,9 @@ import { UsersPage } from './pages/UsersPage'
 // Phase 4 replaces this whole approach with React Router.
 const signedInPages = {
   dashboard: { title: 'Dashboard', content: <DashboardPage /> },
-  'my-tickets': { title: 'My Tickets', content: <TicketListPage /> },
-  'all-tickets': { title: 'All Tickets', content: <TicketListPage /> },
+  // Different keys tell React these are separate pages, so filters reset when you switch.
+  'my-tickets': { title: 'My Tickets', content: <TicketListPage key="my-tickets" /> },
+  'all-tickets': { title: 'All Tickets', content: <TicketListPage key="all-tickets" /> },
   'create-ticket': { title: 'Create Ticket', content: <CreateTicketPage /> },
   'ticket-details': { title: 'Ticket Details', content: <TicketDetailsPage /> },
   users: { title: 'Users', content: <UsersPage /> },

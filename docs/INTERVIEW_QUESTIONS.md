@@ -81,3 +81,63 @@ In development, it serves your source files as native ES modules and updates the
 
 **22. Why do `npx tsc -b` and `npm run build` both matter if the browser is the real test?**
 They catch different things. Types catch wrong props and typos before anything runs. Only the browser catches layout and runtime problems. MiniDesk's phone overflow bug passed type checking and the build, and only appeared in a real browser.
+
+## Phase 2: TypeScript and modern JavaScript
+
+### TypeScript
+
+**23. What is TypeScript, and why use it?**
+It's JavaScript with static types, which are checked during development and removed from the code that ships. It catches mistakes early, enables autocomplete and makes refactoring safer. In MiniDesk, changing a field in `types/index.ts` immediately shows every place affected.
+
+**24. Does TypeScript protect you at runtime?**
+No. Types are erased, so the browser runs plain JavaScript. An API could return the wrong shape and TypeScript wouldn't notice. That's why the server needs its own validation as well.
+
+**25. What's the difference between an optional property and a nullable one?**
+`variant?: ButtonVariant` can be left out entirely. `assignedAgentId: number | null` must be present but can hold `null`. MiniDesk uses nullable for the agent because the field always exists on a ticket, and `null` clearly means nobody is assigned.
+
+**26. What is type narrowing?**
+TypeScript working out a more specific type from your checks. `find` returns `Ticket | undefined`. After `if (!ticket) return ...` in `TicketDetailsPage`, TypeScript knows `ticket` is a `Ticket`.
+
+**27. What are generics?**
+Types with a placeholder that's filled in when they're used. `paginate<T>(items: T[], ...)` works with any list and keeps the item type, so passing tickets returns `PaginatedResponse<Ticket>`. Using `any` instead would lose that checking.
+
+**28. What's the difference between `any` and `unknown`?**
+`any` turns off checking for that value. `unknown` means "this could be anything", and TypeScript makes you check it before using it, so it's the safer choice for data from outside your app. MiniDesk's code doesn't use `any`.
+
+**29. What does `Record<K, V>` do?**
+It describes an object with keys of type `K` and values of type `V`. `Record<TicketStatus, string>` must have a label for all three statuses, so adding a status without a label is a compile error.
+
+**30. What does `Ticket['status']` mean?**
+It's an indexed access type, meaning "the type of the `status` field on `Ticket`". It stays correct automatically if the interface changes.
+
+**31. Why isn't the interface called `Comment`?**
+Browsers already define a global DOM type called `Comment`. Reusing that name is confusing, and a missing import could silently refer to the wrong type. `TicketComment` avoids both problems.
+
+**32. Why doesn't the `User` type have a password field?**
+The frontend should never receive a password or hash. Leaving it out documents that rule, and TypeScript rejects code that adds one to a `User` object. The backend is still what actually keeps it from being sent, which comes in Phase 5.
+
+### JavaScript
+
+**33. What's the difference between `==` and `===`?**
+`==` converts types before comparing, so `'1' == 1` is true. `===` compares without converting, so `'1' === 1` is false. MiniDesk uses `===` throughout, as in `item.id === PREVIEW_TICKET_ID`.
+
+**34. What's the difference between `let`, `const` and `var`?**
+`let` and `const` are block-scoped, and `const` can't be reassigned. `var` is function-scoped and has confusing hoisting behavior, so modern code avoids it. A `const` object's fields can still change; only the variable can't be pointed at something else.
+
+**35. What's the difference between `??` and `||`?**
+`||` falls back on any falsy value, including `0` and `''`. `??` falls back only on `null` and `undefined`. `ticket.assignedAgentId ?? ''` is the safer choice, because a valid value of `0` is kept.
+
+**36. What does optional chaining do?**
+`dialogRef.current?.focus()` calls `focus` only if `current` isn't null or undefined. Otherwise, the whole expression gives `undefined` instead of crashing.
+
+**37. What's the difference between `map`, `filter`, `find` and `reduce`?**
+`map` transforms every item into a new array. `filter` keeps matching items in a new array. `find` returns the first match or `undefined`. `reduce` combines the items into one value. In `getDashboardStats`, `filter(...).length` counts tickets by status.
+
+**38. What do spread and rest do?**
+Both use `...`. Spread expands values, as in `{ ...dateOptions, hour: 'numeric' }`, which builds a new object. Rest collects them, as in `{ label, ...rest }`, which gathers the remaining props.
+
+**39. Why is copying with spread called a shallow copy?**
+Only the top level is copied. Nested objects are still shared between the copy and the original, so changing a nested value affects both. This matters in React and Redux, where state should be updated without changing the original.
+
+**40. Why are dates stored as text in the `Ticket` type?**
+JSON has no date type, so APIs send dates as ISO text such as `2026-11-03T12:00:00Z`. Storing them in UTC and formatting them for display lets each viewer see their local time. `formatDate` handles this conversion.

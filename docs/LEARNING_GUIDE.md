@@ -180,3 +180,193 @@ On a phone, the Dashboard scrolled sideways by 29 pixels. A grid column without 
 4. Add a fifth tile to the Dashboard for high-priority tickets by counting them from `previewTickets`.
 5. Remove `event.stopPropagation()` from `Modal`, click inside the dialog and explain what happens. Then restore it.
 6. Remove the cleanup from the `Modal` effect, add a `console.log` in `handleKeyDown`, open and close the modal several times, and press a key. Explain the output. Then restore it.
+
+## Phase 2: TypeScript and modern JavaScript
+
+### What changed
+
+The screens look the same, but the code behind them changed. Every page now uses one shared definition of what a ticket, user and comment look like, so a mistake in that data shows up as an error in your editor.
+
+### TypeScript, from the beginning
+
+TypeScript is JavaScript plus labels that say what kind of data each value holds. The labels are checked while you develop, then removed. The browser only ever runs plain JavaScript.
+
+**Important limit:** TypeScript can't check data that arrives while the app is running, such as an API response. If the server sends the wrong shape, TypeScript won't notice. That's why the backend also validates data in Phase 5.
+
+#### The basics
+
+```ts
+let title: string = 'Login issue'   // text
+let ticketId: number = 1008         // numbers, including decimals
+let isOpen: boolean = true          // true or false
+let sameTitle = 'Login issue'       // inferred: TypeScript works out that it's a string
+```
+
+You don't need to label everything. Label function inputs and shared data, and let TypeScript infer the rest.
+
+#### Union types: one of these values
+
+```ts
+export type TicketStatus = 'open' | 'in_progress' | 'resolved'
+```
+
+Assigning `'banana'` is now an error. Without this, the type would just be `string`, and a typo would only show up as a bug later.
+
+#### Interfaces: the shape of an object
+
+```ts
+export interface User {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  createdAt: string
+}
+```
+
+Each object must have all of these fields, with these types and no extras. `User` has no password field on purpose, so `{ ..., password: 'x' }` is an error.
+
+#### Optional versus nullable
+
+These look similar but mean different things:
+
+```ts
+variant?: ButtonVariant           // optional: the prop can be left out entirely
+assignedAgentId: number | null    // nullable: the field must exist, but its value can be null
+```
+
+A ticket always has an `assignedAgentId` field. It's `null` until someone is assigned.
+
+#### Arrays
+
+```ts
+export const previewTickets: Ticket[] = [ ... ]
+```
+
+`Ticket[]` means "an array of tickets". TypeScript then knows that `ticket` inside `previewTickets.map((ticket) => ...)` is a `Ticket`, so you get autocomplete without writing that type again.
+
+#### Narrowing: proving a value is safe
+
+`find` might not find anything, so it returns `Ticket | undefined`:
+
+```ts
+const ticket = previewTickets.find((item) => item.id === PREVIEW_TICKET_ID)
+
+ticket.title            // Error: ticket might be undefined
+
+if (!ticket) {
+  return <ErrorMessage message="We couldn't find that ticket." />
+}
+
+ticket.title            // OK: if we reached this line, ticket exists
+```
+
+TypeScript follows your `if` checks. This is called narrowing, and it's what prevents the common runtime crash "Cannot read properties of undefined".
+
+#### Generics: a type with a blank to fill in
+
+Without generics, you'd need one `paginate` function for tickets and another for users. `T` is a placeholder:
+
+```ts
+export function paginate<T>(items: T[], page: number, pageSize: number): PaginatedResponse<T> {
+```
+
+Reading it step by step:
+
+1. `<T>` declares the placeholder.
+2. `items: T[]` says the input is an array of `T`.
+3. `PaginatedResponse<T>` says the output holds that same type.
+4. Passing `previewTickets` makes `T` become `Ticket`, so the result's `items` is `Ticket[]`.
+
+You've already been using generics. `Record<TicketStatus, string>` and `useRef<HTMLDivElement>(null)` both fill in blanks in someone else's type.
+
+#### Indexed access: reuse a field's type
+
+```ts
+const countByStatus = (status: Ticket['status']) => ...
+```
+
+`Ticket['status']` means "whatever type the `status` field has", so this can't fall out of sync with the interface.
+
+### Modern JavaScript used in this project
+
+These are JavaScript features, not TypeScript. They work the same in both.
+
+| Feature | Example from the code | What it does |
+|---|---|---|
+| `const` and `let` | `const PAGE_SIZE = 5` | `const` can't be reassigned, and `let` can. Prefer `const` |
+| Arrow functions | `(ticket) => ticket.title` | A shorter way to write a function |
+| Template literals | `` `Comments (${comments.length})` `` | Puts values inside text |
+| Object destructuring | `const { name, email, role } = previewCurrentUser` | Pulls out named fields |
+| Renaming while destructuring | `const { items: ticketsOnPage } = paginate(...)` | Pulls out `items` and calls it `ticketsOnPage` |
+| Spread | `{ ...dateOptions, hour: 'numeric' }` | Copies an object's fields into a new object |
+| Rest | `{ label, ...rest }` | Collects the remaining fields |
+| Property shorthand | `{ page, totalItems }` | Short for `{ page: page, totalItems: totalItems }` |
+| `map` | `tickets.map((t) => <li>...</li>)` | Creates a new array by transforming each item |
+| `filter` | `users.filter((u) => u.role === 'agent')` | Creates a new array of matching items |
+| `find` | `tickets.find((t) => t.id === 1006)` | Returns the first match, or `undefined` |
+| `slice` | `tickets.slice(0, 5)` | Copies part of an array without changing the original |
+| Optional chaining `?.` | `dialogRef.current?.focus()` | Stops safely if the left side is null or undefined |
+| Nullish coalescing `??` | `ticket.assignedAgentId ?? ''` | Uses the right side only if the left is null or undefined |
+| Ternary | `total === 0 ? 0 : count / total` | A short if/else that produces a value |
+| Modules | `import { formatDate } from '../utils/formatDate'` | Shares code between files |
+
+**`??` versus `||`:** `||` falls back on any falsy value, including `0` and `''`. `??` falls back only on `null` and `undefined`. If an ID could be `0`, `id || ''` would wrongly replace it, while `id ?? ''` wouldn't.
+
+`async`/`await` and Promises aren't here yet because nothing is loading over a network. They arrive with the API in Phases 5 and 7.
+
+### File guide
+
+#### `types/index.ts`
+
+- **What it is:** The single definition of the app's data.
+- **Why we need it:** Every page and helper imports from here, so changing a field shows you every place affected.
+- **How it connects:** Phase 7 uses these types for API responses, and they mirror the tables built in Phase 6.
+- **Naming:** `TicketComment` isn't called `Comment` because browsers already have a built-in `Comment` type.
+
+#### `utils/ticketLabels.ts`
+
+- **What it is:** Display text for each status, priority and category, plus the dropdown order.
+- **Why we need it:** "In Progress" used to be written in several places. Now the badge and dropdowns share one definition.
+- **How `Record` helps:** If you add a status to the union and forget its label, the code won't compile.
+
+#### `utils/formatDate.ts`
+
+- **What it does:** Turns `'2026-11-03T12:00:00Z'` into `Nov 3, 2026`.
+- **Why dates are text:** JSON has no date type, so APIs send dates as text. The `Z` means UTC.
+- **Time zones:** `formatDateTime` shows the viewer's local time. A comment stored as 12:12 UTC displayed as 5:42 PM during testing, because the test machine runs at UTC+5:30.
+
+#### `utils/getInitials.ts`
+
+A chain of array and string methods where each step feeds the next. It uses `charAt(0)` rather than `part[0]` because `charAt` returns an empty string for an empty name, whereas `part[0]` gives `undefined` and calling `.toUpperCase()` on that would crash.
+
+#### `utils/previewData.ts`
+
+Still temporary, and now fully typed. `getDashboardStats` and `paginate` do jobs that SQL takes over in Phase 6, so all of this file gets deleted in Phase 7.
+
+### Flow: from data to screen
+
+Here's what happens when the ticket list renders:
+
+1. `TicketListPage` calls `paginate(previewTickets, page, PAGE_SIZE)`.
+2. Destructuring pulls out `items` and `totalPages`.
+3. `ticketsOnPage.map(...)` turns each `Ticket` into a table row.
+4. `formatDate` turns the stored date into readable text.
+5. `<StatusBadge status={ticket.status} />` looks up its color and label.
+
+TypeScript has checked every one of these connections before the code runs.
+
+### How this phase was tested
+
+A temporary file assigned 9 deliberately wrong values, such as a status of `'banana'` and a `User` with a password. Each line was marked `@ts-expect-error`, which makes the type check fail if that line does *not* produce an error. It passed, proving the types reject bad data. The file was then deleted.
+
+You can use the same trick when you want to test a type.
+
+### Practice exercises
+
+1. In `types/index.ts`, add `'closed'` to `TicketStatus`. Run `npx tsc -b` and read every error. Fix them all, then undo your changes. This shows why `Record` is useful.
+2. Delete the `if (!ticket)` check in `TicketDetailsPage` and read the error. Then restore it.
+3. Write `getOverdueTickets(tickets: Ticket[]): Ticket[]`, which returns unresolved tickets created before a given date.
+4. Write `countTicketsByPriority(tickets: Ticket[]): Record<TicketPriority, number>` using `reduce`.
+5. Write a generic `getFirstItem<T>(items: T[]): T | undefined`. Hover over the result in your editor when you pass it tickets, then users.
+6. Change `??` to `||` in `<Select id="agent" ... defaultValue={ticket.assignedAgentId ?? ''}>` and explain why it would misbehave if an agent's ID were `0`.

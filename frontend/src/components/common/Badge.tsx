@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
-
-export type TicketStatus = 'open' | 'in_progress' | 'resolved'
-export type TicketPriority = 'low' | 'medium' | 'high'
-export type UserRole = 'admin' | 'agent' | 'customer'
+import type { TicketPriority, TicketStatus, UserRole } from '../../types'
+import { priorityLabels, statusLabels } from '../../utils/ticketLabels'
 
 type BadgeTone = 'blue' | 'amber' | 'green' | 'slate' | 'orange' | 'red' | 'indigo'
 
@@ -26,26 +24,24 @@ export function Badge({ tone, children }: { tone: BadgeTone; children: ReactNode
   )
 }
 
-const statusDetails: Record<TicketStatus, { label: string; tone: BadgeTone }> = {
-  open: { label: 'Open', tone: 'blue' },
-  in_progress: { label: 'In Progress', tone: 'amber' },
-  resolved: { label: 'Resolved', tone: 'green' },
+const statusTones: Record<TicketStatus, BadgeTone> = {
+  open: 'blue',
+  in_progress: 'amber',
+  resolved: 'green',
 }
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  const { label, tone } = statusDetails[status]
-  return <Badge tone={tone}>{label}</Badge>
+  return <Badge tone={statusTones[status]}>{statusLabels[status]}</Badge>
 }
 
-const priorityDetails: Record<TicketPriority, { label: string; tone: BadgeTone }> = {
-  low: { label: 'Low', tone: 'slate' },
-  medium: { label: 'Medium', tone: 'orange' },
-  high: { label: 'High', tone: 'red' },
+const priorityTones: Record<TicketPriority, BadgeTone> = {
+  low: 'slate',
+  medium: 'orange',
+  high: 'red',
 }
 
 export function PriorityBadge({ priority }: { priority: TicketPriority }) {
-  const { label, tone } = priorityDetails[priority]
-  return <Badge tone={tone}>{label}</Badge>
+  return <Badge tone={priorityTones[priority]}>{priorityLabels[priority]}</Badge>
 }
 
 const roleDetails: Record<UserRole, { label: string; tone: BadgeTone }> = {

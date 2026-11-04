@@ -5,7 +5,9 @@ import { LinkButton } from '../components/common/Button'
 import { Card } from '../components/common/Card'
 import { Pagination } from '../components/common/Pagination'
 import { Select } from '../components/common/Select'
-import { previewTickets } from '../utils/previewData'
+import { formatDate } from '../utils/formatDate'
+import { paginate, previewTickets } from '../utils/previewData'
+import { priorityLabels, statusLabels, ticketPriorities, ticketStatuses } from '../utils/ticketLabels'
 
 const PAGE_SIZE = 5
 const tableHeadings = ['Ticket ID', 'Title', 'Customer', 'Assigned Agent', 'Priority', 'Status', 'Created Date', 'Actions']
@@ -13,9 +15,8 @@ const tableHeadings = ['Ticket ID', 'Title', 'Customer', 'Assigned Agent', 'Prio
 export function TicketListPage() {
   const [page, setPage] = useState(1)
 
-  const totalPages = Math.ceil(previewTickets.length / PAGE_SIZE)
-  const startIndex = (page - 1) * PAGE_SIZE
-  const ticketsOnPage = previewTickets.slice(startIndex, startIndex + PAGE_SIZE)
+  // TypeScript knows ticketsOnPage is Ticket[] because paginate is generic.
+  const { items: ticketsOnPage, totalPages } = paginate(previewTickets, page, PAGE_SIZE)
 
   return (
     <>
@@ -32,15 +33,19 @@ export function TicketListPage() {
         <div className="grid grid-cols-2 gap-3 lg:flex">
           <Select aria-label="Filter by status" defaultValue="">
             <option value="">All statuses</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
+            {ticketStatuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabels[status]}
+              </option>
+            ))}
           </Select>
           <Select aria-label="Filter by priority" defaultValue="">
             <option value="">All priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            {ticketPriorities.map((priority) => (
+              <option key={priority} value={priority}>
+                {priorityLabels[priority]}
+              </option>
+            ))}
           </Select>
         </div>
         <LinkButton href="#create-ticket" className="whitespace-nowrap">
@@ -67,15 +72,16 @@ export function TicketListPage() {
                 <tr key={ticket.id} className="hover:bg-slate-50">
                   <td className="px-5 py-3 text-slate-500 tabular-nums">#{ticket.id}</td>
                   <td className="px-5 py-3 font-medium">{ticket.title}</td>
-                  <td className="px-5 py-3 text-slate-600">{ticket.customer}</td>
-                  <td className="px-5 py-3 text-slate-600">{ticket.agent ?? <span className="text-slate-500 italic">Unassigned</span>}</td>
+                  <td className="px-5 py-3 text-slate-600">{ticket.customerName}</td>
+                  {/* ?? shows the fallback only when the left side is null or undefined */}
+                  <td className="px-5 py-3 text-slate-600">{ticket.assignedAgentName ?? <span className="text-slate-500 italic">Unassigned</span>}</td>
                   <td className="px-5 py-3">
                     <PriorityBadge priority={ticket.priority} />
                   </td>
                   <td className="px-5 py-3">
                     <StatusBadge status={ticket.status} />
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-slate-600">{ticket.createdAt}</td>
+                  <td className="px-5 py-3 whitespace-nowrap text-slate-600">{formatDate(ticket.createdAt)}</td>
                   <td className="px-5 py-3">
                     <a href="#ticket-details" className="font-medium text-primary hover:underline">
                       View

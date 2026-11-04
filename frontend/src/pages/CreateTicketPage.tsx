@@ -3,6 +3,7 @@ import { Card } from '../components/common/Card'
 import { Input } from '../components/common/Input'
 import { Select } from '../components/common/Select'
 import { Textarea } from '../components/common/Textarea'
+import { categoryLabels, priorityLabels, ticketCategories, ticketPriorities } from '../utils/ticketLabels'
 
 export function CreateTicketPage() {
   return (
@@ -12,15 +13,18 @@ export function CreateTicketPage() {
         <Textarea id="description" label="Description" rows={6} placeholder="What happened, and what did you expect to happen?" />
         <div className="grid gap-5 sm:grid-cols-2">
           <Select id="category" label="Category" defaultValue="general">
-            <option value="general">General</option>
-            <option value="billing">Billing</option>
-            <option value="technical">Technical</option>
-            <option value="account">Account</option>
+            {ticketCategories.map((category) => (
+              <option key={category} value={category}>
+                {categoryLabels[category]}
+              </option>
+            ))}
           </Select>
           <Select id="priority" label="Priority" defaultValue="medium">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            {ticketPriorities.map((priority) => (
+              <option key={priority} value={priority}>
+                {priorityLabels[priority]}
+              </option>
+            ))}
           </Select>
         </div>
         <div className="flex justify-end gap-2">

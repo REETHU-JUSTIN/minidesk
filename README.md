@@ -2,7 +2,7 @@
 
 A small support ticket management system, built to learn full-stack development with React, TypeScript, Node.js, Express and PostgreSQL.
 
-**Current status: Phase 1 of 11.** The interface is a static preview using sample data. Forms don't submit, search and filters don't filter, and there is no login or backend yet.
+**Current status: Phase 2 of 11.** The interface is a static preview using typed sample data. Forms don't submit, search and filters don't filter, and there is no login or backend yet.
 
 ## Run the frontend
 

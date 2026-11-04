@@ -1,5 +1,6 @@
 import { RoleBadge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
+import { formatDate } from '../utils/formatDate'
 import { previewUsers } from '../utils/previewData'
 
 export function UsersPage() {
@@ -23,7 +24,7 @@ export function UsersPage() {
                 <td className="px-5 py-3">
                   <RoleBadge role={user.role} />
                 </td>
-                <td className="px-5 py-3 text-slate-600">{user.joined}</td>
+                <td className="px-5 py-3 text-slate-600">{formatDate(user.createdAt)}</td>
               </tr>
             ))}
           </tbody>

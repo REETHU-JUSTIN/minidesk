@@ -11,9 +11,6 @@ export const previewUsers: User[] = [
   { id: 6, name: 'Noah Kim', email: 'noah@example.com', role: 'customer', createdAt: '2026-10-15T12:00:00Z' },
 ]
 
-// The signed-in user for now. Phase 4 adds AuthContext and Phase 7 makes login real.
-export const previewCurrentUser: User = previewUsers[0]
-
 export const previewTickets: Ticket[] = [
   {
     id: 1008,

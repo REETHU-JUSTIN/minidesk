@@ -1,9 +1,9 @@
 import { RoleBadge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
-import { previewCurrentUser } from '../utils/previewData'
+import { useCurrentUser } from '../hooks/useAuth'
 
 export function SettingsPage() {
-  const { name, email, role } = previewCurrentUser
+  const { name, email, role } = useCurrentUser()
 
   return (
     <Card title="Your profile" className="max-w-2xl">

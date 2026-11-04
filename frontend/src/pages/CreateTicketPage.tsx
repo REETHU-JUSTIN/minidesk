@@ -1,20 +1,32 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '../components/common/Card'
-import { InfoMessage } from '../components/common/InfoMessage'
+import { ErrorMessage } from '../components/common/ErrorMessage'
 import { TicketForm } from '../components/tickets/TicketForm'
+import { createTicket } from '../features/tickets/ticketsSlice'
+import { useAppDispatch } from '../store/hooks'
 import type { CreateTicketInput } from '../types'
 
 export function CreateTicketPage() {
-  const [validatedTitle, setValidatedTitle] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState('')
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
-  // Saving comes in Phase 7. For now, this shows honestly that nothing was saved.
-  function handleSubmit(values: CreateTicketInput) {
-    setValidatedTitle(values.title)
+  async function handleSubmit(values: CreateTicketInput) {
+    setSubmitError('')
+    try {
+      // unwrap gives back the created ticket, or throws if the thunk failed,
+      // so normal try/catch works with a dispatched thunk.
+      const newTicket = await dispatch(createTicket(values)).unwrap()
+      navigate(`/tickets/${newTicket.id}`)
+    } catch (caughtError) {
+      setSubmitError((caughtError as Error).message ?? 'We couldn\'t create your ticket.')
+    }
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      {validatedTitle && <InfoMessage message={`"${validatedTitle}" passed validation, but it wasn't saved. Saving arrives in Phase 7.`} />}
+      {submitError && <ErrorMessage message={submitError} />}
       <Card title="Ticket details">
         <TicketForm onSubmit={handleSubmit} />
       </Card>

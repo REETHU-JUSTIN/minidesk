@@ -1,100 +1,184 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { PriorityBadge, StatusBadge } from '../components/common/Badge'
 import { Button } from '../components/common/Button'
 import { Card } from '../components/common/Card'
 import { ErrorMessage } from '../components/common/ErrorMessage'
 import { Modal } from '../components/common/Modal'
-import { CommentForm } from '../components/tickets/CommentForm'
-import { CommentList } from '../components/tickets/CommentList'
+import { Spinner } from '../components/common/Spinner'
+import { TicketComments } from '../components/tickets/TicketComments'
+import { TicketEditForm } from '../components/tickets/TicketEditForm'
 import { TicketManagePanel } from '../components/tickets/TicketManagePanel'
-import type { Ticket, TicketStatus } from '../types'
+import { deleteTicket, fetchTicketById, updateTicket } from '../features/tickets/ticketsSlice'
+import { useCurrentUser } from '../hooks/useAuth'
+import { getUsers } from '../services/userService'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { Ticket, UpdateTicketInput, User } from '../types'
 import { formatDate } from '../utils/formatDate'
-import { previewComments, previewCurrentUser, previewTickets, previewUsers } from '../utils/previewData'
 import { categoryLabels } from '../utils/ticketLabels'
 
-// A fixed ticket for now. Phase 4 reads the id from the URL.
-const PREVIEW_TICKET_ID = 1006
-
-const agents = previewUsers.filter((user) => user.role === 'agent')
-
 export function TicketDetailsPage() {
-  const ticket = previewTickets.find((item) => item.id === PREVIEW_TICKET_ID)
+  // useParams reads :ticketId from the URL. It's always text, so we convert it and check it.
+  const { ticketId } = useParams()
+  const numericId = Number(ticketId)
 
-  // Hooks must run in the same order on every render, so they can't come after an early return.
-  // Moving the hooks into a child component that only renders when the ticket exists solves this.
-  if (!ticket) {
+  if (!Number.isInteger(numericId) || numericId <= 0) {
     return <ErrorMessage message="We couldn't find that ticket." />
   }
 
-  return <TicketDetails ticket={ticket} />
+  // The key gives each ticket a fresh component, so nothing carries over between tickets.
+  return <TicketDetailsLoader key={numericId} ticketId={numericId} />
+}
+
+function TicketDetailsLoader({ ticketId }: { ticketId: number }) {
+  const dispatch = useAppDispatch()
+  const { selectedTicket, detailStatus, detailError } = useAppSelector((state) => state.tickets)
+
+  useEffect(() => {
+    const request = dispatch(fetchTicketById(ticketId))
+    return () => request.abort()
+  }, [dispatch, ticketId])
+
+  if (detailStatus === 'failed') {
+    return <ErrorMessage message={detailError ?? 'We couldn\'t load that ticket.'} />
+  }
+
+  // Hooks must run in the same order on every render, so they can't come after an early return.
+  // TicketDetails only renders once the right ticket has loaded. The id check also
+  // stops the previously viewed ticket from flashing up.
+  if (selectedTicket?.id !== ticketId) {
+    return <Spinner label="Loading ticket..." />
+  }
+
+  return <TicketDetails ticket={selectedTicket} />
 }
 
 function TicketDetails({ ticket }: { ticket: Ticket }) {
-  // These changes last until the page reloads. Phase 7 saves them through the API.
-  const [status, setStatus] = useState<TicketStatus>(ticket.status)
-  const [assignedAgentId, setAssignedAgentId] = useState(ticket.assignedAgentId)
-  const [comments, setComments] = useState(() => previewComments.filter((comment) => comment.ticketId === ticket.id))
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const currentUser = useCurrentUser()
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
-  // Modal's effect depends on onClose. A stable function stops that effect from
+  const [agents, setAgents] = useState<User[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [actionError, setActionError] = useState('')
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const { role } = currentUser
+  const canManage = role === 'admin' || role === 'agent'
+  const canEdit = role === 'admin' || (role === 'customer' && ticket.status === 'open')
+
+  // Modal's effect depends on onClose. Stable functions stop that effect from
   // re-running, and pulling keyboard focus back, whenever this page re-renders.
+  const closeEditModal = useCallback(() => setIsEditOpen(false), [])
   const closeDeleteModal = useCallback(() => setIsDeleteOpen(false), [])
 
-  function handleAddComment(message: string) {
-    const newComment = {
-      id: Date.now(), // a temporary id, until the database creates real ones
-      ticketId: ticket.id,
-      userId: previewCurrentUser.id,
-      authorName: previewCurrentUser.name,
-      message,
-      createdAt: new Date().toISOString(),
+  // Only admins may list users, so only they request the agent list.
+  useEffect(() => {
+    if (role !== 'admin') return
+
+    let isCancelled = false
+    getUsers('agent')
+      .then((loadedAgents) => {
+        if (!isCancelled) setAgents(loadedAgents)
+      })
+      .catch((caughtError: Error) => {
+        if (!isCancelled) setActionError(caughtError.message)
+      })
+
+    return () => {
+      isCancelled = true
     }
-    // State is never changed directly. We create a new array, and React sees the change.
-    setComments((currentComments) => [...currentComments, newComment])
+  }, [role])
+
+  async function saveChanges(changes: UpdateTicketInput) {
+    setIsSaving(true)
+    setActionError('')
+    try {
+      await dispatch(updateTicket({ ticketId: ticket.id, changes })).unwrap()
+    } catch (caughtError) {
+      setActionError((caughtError as Error).message ?? 'We couldn\'t save your changes.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleEditSave(values: { title: string; description: string }) {
+    await saveChanges(values)
+    closeEditModal()
+  }
+
+  async function handleDelete() {
+    setIsDeleting(true)
+    setActionError('')
+    try {
+      await dispatch(deleteTicket(ticket.id)).unwrap()
+      navigate('/tickets', { replace: true })
+    } catch (caughtError) {
+      setActionError((caughtError as Error).message ?? 'We couldn\'t delete this ticket.')
+      setIsDeleting(false)
+      closeDeleteModal()
+    }
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <div className="space-y-6 xl:col-span-2">
+        {actionError && <ErrorMessage message={actionError} />}
+
         <Card>
           <div className="p-5">
-            <p className="text-sm text-slate-500 tabular-nums">
-              #{ticket.id} · {categoryLabels[ticket.category]}
-            </p>
-            <h2 className="mt-1 text-xl font-semibold">{ticket.title}</h2>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm text-slate-500 tabular-nums">
+                  #{ticket.id} · {categoryLabels[ticket.category]}
+                </p>
+                <h2 className="mt-1 text-xl font-semibold break-words">{ticket.title}</h2>
+              </div>
+              {canEdit && (
+                <Button variant="secondary" onClick={() => setIsEditOpen(true)}>
+                  Edit
+                </Button>
+              )}
+            </div>
             <div className="mt-3 flex gap-2">
-              <StatusBadge status={status} />
+              <StatusBadge status={ticket.status} />
               <PriorityBadge priority={ticket.priority} />
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-700">{ticket.description}</p>
+            <p className="mt-4 text-sm leading-6 whitespace-pre-line text-slate-700">{ticket.description}</p>
           </div>
         </Card>
 
-        <Card title={`Comments (${comments.length})`}>
-          <CommentList comments={comments} />
-          <CommentForm onAddComment={handleAddComment} />
-        </Card>
+        <TicketComments ticketId={ticket.id} />
       </div>
 
       <div className="space-y-6">
-        <TicketManagePanel
-          status={status}
-          assignedAgentId={assignedAgentId}
-          agents={agents}
-          onStatusChange={setStatus}
-          onAgentChange={setAssignedAgentId}
-          onDeleteClick={() => setIsDeleteOpen(true)}
-        />
+        {canManage && (
+          <TicketManagePanel
+            ticket={ticket}
+            currentUser={currentUser}
+            agents={agents}
+            isSaving={isSaving}
+            onStatusChange={(status) => saveChanges({ status })}
+            onAgentChange={(assignedAgentId) => saveChanges({ assignedAgentId })}
+            onDeleteClick={() => setIsDeleteOpen(true)}
+          />
+        )}
 
-        <Card title="Customer">
+        <Card title="People">
           <dl className="space-y-3 p-5 text-sm">
             <div>
-              <dt className="text-slate-500">Name</dt>
+              <dt className="text-slate-500">Customer</dt>
               <dd className="font-medium">{ticket.customerName}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">Email</dt>
-              <dd className="font-medium">{ticket.customerEmail}</dd>
+              <dt className="text-slate-500">Customer email</dt>
+              <dd className="font-medium break-words">{ticket.customerEmail}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Assigned agent</dt>
+              <dd className="font-medium">{ticket.assignedAgentName ?? 'Unassigned'}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Created</dt>
@@ -103,6 +187,14 @@ function TicketDetails({ ticket }: { ticket: Ticket }) {
           </dl>
         </Card>
       </div>
+
+      <Modal isOpen={isEditOpen} title="Edit ticket" onClose={closeEditModal}>
+        <TicketEditForm
+          initialValues={{ title: ticket.title, description: ticket.description }}
+          onSave={handleEditSave}
+          onCancel={closeEditModal}
+        />
+      </Modal>
 
       <Modal
         isOpen={isDeleteOpen}
@@ -113,7 +205,7 @@ function TicketDetails({ ticket }: { ticket: Ticket }) {
             <Button variant="secondary" onClick={closeDeleteModal}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={closeDeleteModal}>
+            <Button variant="danger" isLoading={isDeleting} onClick={handleDelete}>
               Delete Ticket
             </Button>
           </>

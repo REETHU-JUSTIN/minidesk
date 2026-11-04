@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.14.0",
     "@tailwindcss/vite": "^4.3.4",
     "lucide-react": "^1.68.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hook-form": "^7.91.0",
+    "react-redux": "^9.3.1",
+    "react-router-dom": "^7.18.5",
     "tailwindcss": "^4.3.4"
   },
   "devDependencies": {

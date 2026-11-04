@@ -2,7 +2,7 @@
 
 A small support ticket management system, built to learn full-stack development with React, TypeScript, Node.js, Express and PostgreSQL.
 
-**Current status: Phase 3 of 11.** The interface runs on typed sample data. Search, filters and form validation work, but there is no login or backend yet, so nothing is saved.
+**Current status: Phase 4 of 11.** The frontend works from end to end with real routing, roles and state management, but it runs on a temporary in-browser backend. Passwords aren't checked, and all data resets when the page reloads. The real API arrives in Phases 5 to 7.
 
 ## Run the frontend
 
@@ -14,7 +14,13 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Use the **Preview** dropdown in the bottom-right corner to reach any page.
+Open http://localhost:5173 and sign in with one of these preview accounts, using any password:
+
+| Email | Role |
+|---|---|
+| `admin@example.com` | Admin |
+| `sam@example.com` | Agent |
+| `priya@example.com` | Customer |
 
 ## Useful commands
 
@@ -38,6 +44,8 @@ Run these from the `frontend` folder:
 | `tailwindcss`, `@tailwindcss/vite` | Utility-first CSS |
 | `lucide-react` | Icons |
 | `react-hook-form` | Form state and validation |
+| `react-router-dom` | Page routing |
+| `@reduxjs/toolkit`, `react-redux` | Global state for tickets and dashboard data |
 | `oxlint` | Linter, included by the Vite template |
 
 ## Learning material

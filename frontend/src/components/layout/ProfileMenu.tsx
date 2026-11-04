@@ -1,18 +1,26 @@
 import { useRef, useState } from 'react'
 import { LogOut, Settings } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth, useCurrentUser } from '../../hooks/useAuth'
 import { useCloseOnOutside } from '../../hooks/useCloseOnOutside'
 import { getInitials } from '../../utils/getInitials'
-import { previewCurrentUser } from '../../utils/previewData'
 import { RoleBadge } from '../common/Badge'
 
-const menuLinkClasses = 'flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100'
+const menuItemClasses = 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100'
 
 export function ProfileMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { name, email, role } = previewCurrentUser
+  const { name, email, role } = useCurrentUser()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
 
   useCloseOnOutside(containerRef, isOpen, () => setIsOpen(false))
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div ref={containerRef} className="relative">
@@ -37,14 +45,14 @@ export function ProfileMenu() {
             <RoleBadge role={role} />
           </div>
           <div className="p-2">
-            <a href="#settings" onClick={() => setIsOpen(false)} className={menuLinkClasses}>
+            <Link to="/settings" onClick={() => setIsOpen(false)} className={menuItemClasses}>
               <Settings className="size-4" aria-hidden="true" />
               Settings
-            </a>
-            <a href="#login" onClick={() => setIsOpen(false)} className={menuLinkClasses}>
+            </Link>
+            <button type="button" onClick={handleLogout} className={menuItemClasses}>
               <LogOut className="size-4" aria-hidden="true" />
               Logout
-            </a>
+            </button>
           </div>
         </div>
       )}

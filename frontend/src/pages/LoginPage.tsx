@@ -1,29 +1,41 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { Button } from '../components/common/Button'
+import { ErrorMessage } from '../components/common/ErrorMessage'
 import { InfoMessage } from '../components/common/InfoMessage'
 import { Input } from '../components/common/Input'
 import { AuthLayout } from '../components/layout/AuthLayout'
+import { useAuth } from '../hooks/useAuth'
+import type { LoginInput } from '../types'
 import { emailRules } from '../utils/validationRules'
 
-interface LoginFormValues {
-  email: string
-  password: string
-}
-
 export function LoginPage() {
-  const [wasValidated, setWasValidated] = useState(false)
+  const { login } = useAuth()
+  const [loginError, setLoginError] = useState('')
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>({ defaultValues: { email: '', password: '' } })
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({ defaultValues: { email: '', password: '' } })
+
+  // There's no navigate call here. When login succeeds the user changes,
+  // and GuestRoute redirects to the right page.
+  async function submitValidForm(values: LoginInput) {
+    setLoginError('')
+    try {
+      await login(values)
+    } catch (caughtError) {
+      setLoginError(caughtError instanceof Error ? caughtError.message : 'We couldn\'t sign you in.')
+    }
+  }
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your MiniDesk account.">
-      {/* Real sign-in arrives in Phase 7, so the form doesn't pretend to log you in. */}
-      <form className="space-y-4" noValidate onSubmit={handleSubmit(() => setWasValidated(true))}>
-        {wasValidated && <InfoMessage message="The form is valid, but you weren't signed in. Sign-in arrives in Phase 7." />}
+      <form className="space-y-4" noValidate onSubmit={handleSubmit(submitValidForm)}>
+        {/* TEMPORARY: removed in Phase 7, when real passwords are checked. */}
+        <InfoMessage message="Preview mode: sign in as admin@example.com, sam@example.com or priya@example.com. Any password works until Phase 7." />
+        {loginError && <ErrorMessage message={loginError} />}
         <Input
           id="email"
           label="Email"
@@ -43,19 +55,19 @@ export function LoginPage() {
           {...register('password', { required: 'Enter your password.' })}
         />
         <div className="text-right">
-          <a href="#forgot-password" className="text-sm font-medium text-primary hover:underline">
+          <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
             Forgot password?
-          </a>
+          </Link>
         </div>
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" isLoading={isSubmitting}>
           Sign in
         </Button>
       </form>
       <p className="mt-5 text-center text-sm text-slate-500">
         New to MiniDesk?{' '}
-        <a href="#register" className="font-medium text-primary hover:underline">
+        <Link to="/register" className="font-medium text-primary hover:underline">
           Create an account
-        </a>
+        </Link>
       </p>
     </AuthLayout>
   )

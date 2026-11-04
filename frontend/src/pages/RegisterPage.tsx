@@ -1,33 +1,45 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { Button } from '../components/common/Button'
-import { InfoMessage } from '../components/common/InfoMessage'
+import { ErrorMessage } from '../components/common/ErrorMessage'
 import { Input } from '../components/common/Input'
 import { AuthLayout } from '../components/layout/AuthLayout'
+import { useAuth } from '../hooks/useAuth'
+import type { RegisterInput } from '../types'
 import { emailRules, newPasswordRules } from '../utils/validationRules'
 
-interface RegisterFormValues {
-  name: string
-  email: string
-  password: string
+// Adds a field that only the form needs. The password check happens here,
+// so the confirmation is never sent to the server.
+interface RegisterFormValues extends RegisterInput {
   confirmPassword: string
 }
 
 export function RegisterPage() {
-  const [wasValidated, setWasValidated] = useState(false)
+  const { register: registerAccount } = useAuth()
+  const [registerError, setRegisterError] = useState('')
   const {
     register,
     handleSubmit,
     getValues,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   })
 
+  async function submitValidForm({ name, email, password }: RegisterFormValues) {
+    setRegisterError('')
+    try {
+      await registerAccount({ name, email, password })
+    } catch (caughtError) {
+      setRegisterError(caughtError instanceof Error ? caughtError.message : 'We couldn\'t create your account.')
+    }
+  }
+
   return (
     <AuthLayout title="Create your account" subtitle="Sign up to create and track support tickets.">
-      <form className="space-y-4" noValidate onSubmit={handleSubmit(() => setWasValidated(true))}>
-        {wasValidated && <InfoMessage message="The form is valid, but no account was created. Sign-up arrives in Phase 7." />}
+      <form className="space-y-4" noValidate onSubmit={handleSubmit(submitValidForm)}>
+        {registerError && <ErrorMessage message={registerError} />}
         <Input
           id="name"
           label="Full name"
@@ -65,15 +77,15 @@ export function RegisterPage() {
             validate: (value) => value === getValues('password') || 'The passwords must match.',
           })}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" isLoading={isSubmitting}>
           Create account
         </Button>
       </form>
       <p className="mt-5 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <a href="#login" className="font-medium text-primary hover:underline">
+        <Link to="/login" className="font-medium text-primary hover:underline">
           Sign in
-        </a>
+        </Link>
       </p>
     </AuthLayout>
   )

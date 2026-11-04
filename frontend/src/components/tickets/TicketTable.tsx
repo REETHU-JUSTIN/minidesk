@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { Ticket } from '../../types'
 import { formatDate } from '../../utils/formatDate'
 import { PriorityBadge, StatusBadge } from '../common/Badge'
@@ -5,10 +6,6 @@ import { PriorityBadge, StatusBadge } from '../common/Badge'
 const tableHeadings = ['Ticket ID', 'Title', 'Customer', 'Assigned Agent', 'Priority', 'Status', 'Created Date', 'Actions']
 
 export function TicketTable({ tickets }: { tickets: Ticket[] }) {
-  if (tickets.length === 0) {
-    return <p className="px-5 py-12 text-center text-sm text-slate-500">No tickets match your search and filters.</p>
-  }
-
   return (
     // Wide tables scroll sideways inside the card on small screens
     <div className="overflow-x-auto">
@@ -38,9 +35,9 @@ export function TicketTable({ tickets }: { tickets: Ticket[] }) {
               </td>
               <td className="px-5 py-3 whitespace-nowrap text-slate-600">{formatDate(ticket.createdAt)}</td>
               <td className="px-5 py-3">
-                <a href="#ticket-details" className="font-medium text-primary hover:underline">
+                <Link to={`/tickets/${ticket.id}`} className="font-medium text-primary hover:underline">
                   View
-                </a>
+                </Link>
               </td>
             </tr>
           ))}

@@ -7,7 +7,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout title="Forgot your password?" subtitle="Password reset emails aren't available yet.">
       <p className="text-sm text-slate-600">Please contact your MiniDesk administrator, who can help you regain access.</p>
-      <LinkButton href="#login" variant="secondary" className="mt-5 w-full">
+      <LinkButton to="/login" variant="secondary" className="mt-5 w-full">
         Back to sign in
       </LinkButton>
     </AuthLayout>

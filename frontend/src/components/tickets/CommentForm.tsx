@@ -4,7 +4,7 @@ import { Button } from '../common/Button'
 import { Textarea } from '../common/Textarea'
 
 interface CommentFormProps {
-  onAddComment: (message: string) => void
+  onAddComment: (message: string) => Promise<void>
 }
 
 // This one-field form is written by hand, without React Hook Form,
@@ -12,9 +12,10 @@ interface CommentFormProps {
 export function CommentForm({ onAddComment }: CommentFormProps) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [isPosting, setIsPosting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault() // stops the browser from reloading the page
 
     const trimmedMessage = message.trim()
@@ -24,10 +25,17 @@ export function CommentForm({ onAddComment }: CommentFormProps) {
       return
     }
 
-    onAddComment(trimmedMessage)
-    setMessage('')
+    setIsPosting(true)
     setError('')
-    textareaRef.current?.focus() // ready for another comment
+    try {
+      await onAddComment(trimmedMessage)
+      setMessage('') // only cleared on success, so a failed post doesn't lose the text
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'We couldn\'t post your comment.')
+    } finally {
+      setIsPosting(false) // finally runs whether the request worked or not
+      textareaRef.current?.focus()
+    }
   }
 
   return (
@@ -43,7 +51,9 @@ export function CommentForm({ onAddComment }: CommentFormProps) {
         onChange={(event) => setMessage(event.target.value)}
       />
       <div className="flex justify-end">
-        <Button type="submit">Post Comment</Button>
+        <Button type="submit" isLoading={isPosting}>
+          Post Comment
+        </Button>
       </div>
     </form>
   )

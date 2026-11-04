@@ -8,23 +8,22 @@ import { Select } from '../common/Select'
 import { Textarea } from '../common/Textarea'
 
 interface TicketFormProps {
-  onSubmit: (values: CreateTicketInput) => void
+  onSubmit: (values: CreateTicketInput) => Promise<void>
 }
 
 export function TicketForm({ onSubmit }: TicketFormProps) {
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<CreateTicketInput>({
     defaultValues: { title: '', description: '', category: 'general', priority: 'medium' },
   })
 
   // handleSubmit validates first, and only calls this function if every field is valid.
-  function submitValidForm(values: CreateTicketInput) {
-    onSubmit({ ...values, title: values.title.trim(), description: values.description.trim() })
-    reset()
+  // isSubmitting stays true until this async function finishes.
+  async function submitValidForm(values: CreateTicketInput) {
+    await onSubmit({ ...values, title: values.title.trim(), description: values.description.trim() })
   }
 
   return (
@@ -63,10 +62,12 @@ export function TicketForm({ onSubmit }: TicketFormProps) {
         </Select>
       </div>
       <div className="flex justify-end gap-2">
-        <LinkButton href="#my-tickets" variant="secondary">
+        <LinkButton to="/tickets/mine" variant="secondary">
           Cancel
         </LinkButton>
-        <Button type="submit">Create Ticket</Button>
+        <Button type="submit" isLoading={isSubmitting}>
+          Create Ticket
+        </Button>
       </div>
     </form>
   )

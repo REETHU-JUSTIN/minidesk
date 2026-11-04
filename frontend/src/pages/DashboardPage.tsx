@@ -1,13 +1,34 @@
+import { useEffect } from 'react'
 import { CheckCircle2, CircleDot, Clock, Ticket } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { StatusBadge } from '../components/common/Badge'
 import { Card } from '../components/common/Card'
+import { ErrorMessage } from '../components/common/ErrorMessage'
+import { Spinner } from '../components/common/Spinner'
 import { StatCard } from '../components/common/StatCard'
+import { fetchDashboard } from '../features/dashboard/dashboardSlice'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { formatDate } from '../utils/formatDate'
-import { getDashboardStats, previewTickets } from '../utils/previewData'
 
 export function DashboardPage() {
-  // Destructuring pulls the four numbers out of the stats object.
-  const { total, open, inProgress, resolved } = getDashboardStats(previewTickets)
+  const dispatch = useAppDispatch()
+  const { stats, recentTickets, status, error } = useAppSelector((state) => state.dashboard)
+
+  // Load fresh numbers each time this page opens. The cleanup cancels the request if you leave first.
+  useEffect(() => {
+    const request = dispatch(fetchDashboard())
+    return () => request.abort()
+  }, [dispatch])
+
+  if (status === 'failed') {
+    return <ErrorMessage message={error ?? 'We couldn\'t load the dashboard.'} />
+  }
+
+  if (!stats) {
+    return <Spinner label="Loading dashboard..." />
+  }
+
+  const { total, open, inProgress, resolved } = stats
 
   const statusOverview = [
     { label: 'Open', count: open, barColor: 'bg-blue-600' },
@@ -27,21 +48,25 @@ export function DashboardPage() {
       {/* grid-cols-1 stops long truncated titles from stretching the column on phones */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card title="Recent Tickets" className="xl:col-span-2">
-          <ul className="divide-y divide-slate-200">
-            {previewTickets.slice(0, 5).map((ticket) => (
-              <li key={ticket.id}>
-                <a href="#ticket-details" className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-slate-50">
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{ticket.title}</span>
-                    <span className="text-xs text-slate-500">
-                      #{ticket.id} · {ticket.customerName} · {formatDate(ticket.createdAt)}
+          {recentTickets.length === 0 ? (
+            <p className="px-5 py-12 text-center text-sm text-slate-500">No tickets yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-200">
+              {recentTickets.map((ticket) => (
+                <li key={ticket.id}>
+                  <Link to={`/tickets/${ticket.id}`} className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-slate-50">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{ticket.title}</span>
+                      <span className="text-xs text-slate-500">
+                        #{ticket.id} · {ticket.customerName} · {formatDate(ticket.createdAt)}
+                      </span>
                     </span>
-                  </span>
-                  <StatusBadge status={ticket.status} />
-                </a>
-              </li>
-            ))}
-          </ul>
+                    <StatusBadge status={ticket.status} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         <Card title="Ticket Status Overview">

@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { Loader2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -44,15 +45,15 @@ export function Button({
   )
 }
 
-interface LinkButtonProps extends ComponentProps<'a'> {
+interface LinkButtonProps extends ComponentProps<typeof Link> {
   variant?: ButtonVariant
 }
 
 // A link that looks like a button. Use it for navigation; use Button for actions.
 export function LinkButton({ variant = 'primary', className = '', children, ...rest }: LinkButtonProps) {
   return (
-    <a className={`${baseClasses} ${variantClasses[variant]} ${className}`} {...rest}>
+    <Link className={`${baseClasses} ${variantClasses[variant]} ${className}`} {...rest}>
       {children}
-    </a>
+    </Link>
   )
 }

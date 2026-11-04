@@ -36,6 +36,33 @@ export interface Ticket {
 // Pick creates a new type from selected fields, so these can't drift from Ticket.
 export type CreateTicketInput = Pick<Ticket, 'title' | 'description' | 'category' | 'priority'>
 
+// Partial makes every field optional, because an update may change only one thing.
+export type UpdateTicketInput = Partial<Pick<Ticket, 'title' | 'description' | 'status' | 'assignedAgentId'>>
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface RegisterInput {
+  name: string
+  email: string
+  password: string
+}
+
+// "mine" means tickets a customer created, or tickets assigned to an agent.
+export type TicketScope = 'all' | 'mine'
+
+export interface TicketQuery {
+  scope?: TicketScope
+  search?: string
+  status?: TicketStatus | ''
+  priority?: TicketPriority | ''
+  page?: number
+  limit?: number
+  sort?: 'newest' | 'updated'
+}
+
 // An empty string means "no filter" for that field.
 export interface TicketFilterValues {
   search: string

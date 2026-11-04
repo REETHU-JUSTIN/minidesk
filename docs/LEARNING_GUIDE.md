@@ -365,11 +365,11 @@ You can use the same trick when you want to test a type.
 ### Practice exercises
 
 1. In `types/index.ts`, add `'closed'` to `TicketStatus`. Run `npx tsc -b` and read every error. Fix them all, then undo your changes. This shows why `Record` is useful.
-2. Delete the `if (!ticket)` check in `TicketDetailsPage` and read the error. Then restore it.
+2. In `TicketDetailsLoader`, delete the `if (selectedTicket?.id !== ticketId)` check and read the error. Then restore it.
 3. Write `getOverdueTickets(tickets: Ticket[]): Ticket[]`, which returns unresolved tickets created before a given date.
 4. Write `countTicketsByPriority(tickets: Ticket[]): Record<TicketPriority, number>` using `reduce`.
 5. Write a generic `getFirstItem<T>(items: T[]): T | undefined`. Hover over the result in your editor when you pass it tickets, then users.
-6. In `TicketManagePanel`, change `value={assignedAgentId ?? ''}` to use `||` and explain why it would misbehave if an agent's ID were `0`.
+6. In `TicketManagePanel`, change `value={ticket.assignedAgentId ?? ''}` to use `||` and explain why it would misbehave if an agent's ID were `0`.
 
 ## Phase 3: React components, props and Hooks
 
@@ -546,3 +546,222 @@ React keeps a component's state if the same component type stays in the same pos
 5. Add a required "Phone number" field to the register form using `register`, with a rule of your own. Then remove it.
 6. Convert `CommentForm` to React Hook Form, then compare the two versions. Which do you prefer for one field?
 7. Show "Showing X of Y tickets" above the table. Which component should calculate it, and why?
+
+## Phase 4: React Router, Context API and Redux Toolkit
+
+Earlier sections describe the code as it was in those phases. This phase replaced the hash navigation in `App.tsx`, removed the preview dropdown and the temporary design system page, and moved filtering out of `TicketListPage`, so its `useMemo` is gone too.
+
+### What works now
+
+Sign in on the login page with one of these accounts, using any password until Phase 7:
+
+| Email | Role |
+|---|---|
+| `admin@example.com` | Admin |
+| `sam@example.com` | Agent |
+| `priya@example.com` | Customer |
+
+| Works now | What's still temporary |
+|---|---|
+| Real URLs, the Back button and links you can bookmark | |
+| Sign-in, sign-up, sign-out, and staying signed in after a refresh | Passwords aren't checked |
+| Pages and buttons that depend on role | The rules run in the browser, until Phase 5 puts them on the server |
+| Creating, editing, assigning and deleting tickets, and adding comments | Everything resets when the page reloads |
+| Real loading and error states | The data comes from `previewBackend.ts`, not a server |
+
+### Why two kinds of global state
+
+This is one of the most common React interview topics.
+
+| | Context | Redux Toolkit |
+|---|---|---|
+| **Used for here** | Who is signed in | Tickets and dashboard data |
+| **Why** | Simple, changes rarely, and many components only read it | Async loading, errors, and several pages reading and updating it |
+| **Extra library** | No, it's built into React | Yes |
+| **Re-renders** | Every component using the context, whenever its value changes | Only components whose selected data changed |
+
+Comments and the user list use a third option, **local state**, because only one component needs them. Start with local state, and move something up only when you have a reason.
+
+No data is held in two of these places. Keeping copies in sync is a classic source of bugs.
+
+### React Router
+
+#### How routes fit together
+
+```tsx
+<Route element={<ProtectedRoute />}>
+  <Route element={<AppLayout />}>
+    <Route path="/dashboard" element={<DashboardPage />} />
+    <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+      <Route path="/users" element={<UsersPage />} />
+    </Route>
+  </Route>
+</Route>
+```
+
+A route with `element` but no `path` is a **layout route**. It wraps the routes inside it, and each one renders `<Outlet />` where the next level should appear. Visiting `/users` runs this chain:
+
+1. `ProtectedRoute` checks that someone is signed in, then renders its Outlet.
+2. `AppLayout` draws the sidebar and top bar, then renders its Outlet.
+3. The inner `ProtectedRoute` checks for the admin role, then renders its Outlet.
+4. `UsersPage` appears.
+
+#### The router tools used
+
+| Tool | Where | What it does |
+|---|---|---|
+| `Link`, `NavLink` | Throughout | Changes the URL without reloading the page. `NavLink` also knows when it's active |
+| `useNavigate` | `TopNav`, logout, after creating a ticket | Changes page from code |
+| `useParams` | `TicketDetailsPage` | Reads `:ticketId` from the URL |
+| `useSearchParams` | `TicketListPage` | Reads `?search=` from the URL |
+| `useLocation` | `ProtectedRoute` | Tells it the current URL |
+| `Navigate` | `ProtectedRoute`, `GuestRoute` | Redirects while rendering |
+
+#### `components/layout/ProtectedRoute.tsx`
+
+```tsx
+if (isRestoringSession) {
+  return <Spinner />
+}
+```
+Without this wait, a refresh would briefly see "no user yet" and send a signed-in person to the login page.
+
+```tsx
+if (!user) {
+  return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
+}
+```
+- **`replace`:** swaps the current history entry, so the Back button doesn't return to the page that redirected you.
+- **`state`:** remembers where you were going. `GuestRoute` reads it after login and sends you there.
+
+**This isn't security.** Anyone can edit code running in their own browser, so this only controls what the screen shows. The real protection comes from the server in Phase 5, and an interviewer will often check that you know this.
+
+### AuthContext
+
+Three pieces work together:
+
+1. **`context/AuthContext.ts`:** `createContext` makes the container.
+2. **`context/AuthProvider.tsx`:** holds the state and shares it through `<AuthContext.Provider value={value}>`.
+3. **`hooks/useAuth.ts`:** `useContext(AuthContext)` reads it from any component inside the provider.
+
+```tsx
+const value = useMemo(
+  () => ({ user, isRestoringSession, login, register, logout }),
+  [user, isRestoringSession, login, register, logout],
+)
+```
+
+This is `useMemo` doing important work. Without it, each render of `AuthProvider` creates a new object, so every component using the context re-renders even when nothing changed.
+
+**Why `useCurrentUser` exists:** `user` can be `null`, but on a protected page it never is. This hook throws if it's missing and returns a plain `User`, so components skip a null check that could never matter.
+
+### Redux Toolkit
+
+#### The flow
+
+```
+Component        dispatch(fetchTickets(query))
+    |
+Thunk            dispatches "pending", then calls the service
+    |
+Reducer          sets listStatus = 'loading'
+    |
+Service          returns tickets after waiting for the data
+    |
+Thunk            dispatches "fulfilled" with the tickets
+    |
+Reducer          saves them to the store
+    |
+useAppSelector   sees the change, and the component re-renders
+```
+
+Data only moves in this one direction, which is what makes state changes easy to follow and debug.
+
+#### `features/tickets/ticketsSlice.ts`
+
+```ts
+export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery) => ticketService.getTickets(query))
+```
+`createAsyncThunk` writes the boring part for you. It creates three action types and dispatches them at the right times, and it passes along the data or the error.
+
+```ts
+.addCase(fetchTickets.pending, (state) => {
+  state.listStatus = 'loading'
+  state.listError = null
+})
+```
+This looks like it changes state directly, which React forbids. Redux Toolkit uses a library called Immer, which records these changes and builds a new object from them. This only works inside `createSlice` reducers.
+
+```ts
+.addCase(fetchTickets.rejected, (state, action) => {
+  if (action.meta.aborted) return
+```
+An aborted request was cancelled on purpose because a newer one replaced it, so it isn't an error to show.
+
+```ts
+.addCase(userLoggedOut, () => initialState)
+```
+Each slice clears itself on logout. Returning a value replaces the state entirely. Without this, the next person to sign in on the same browser could briefly see the previous person's tickets.
+
+#### Stopping out-of-order responses
+
+```ts
+useEffect(() => {
+  const request = dispatch(fetchTickets({ scope, search: debouncedSearch, status, priority, page, limit: PAGE_SIZE }))
+  return () => request.abort()
+}, [dispatch, scope, debouncedSearch, status, priority, page])
+```
+
+Suppose you click Next, then Previous. Network responses can arrive in any order, so without protection the older one could overwrite the newer one, and you'd see page 2's rows labeled as page 1. This is called a **race condition**. Here, the cleanup cancels the older request before the new one starts.
+
+Components that use local state, such as `TicketComments`, do the same job with an `isCancelled` flag.
+
+#### Handling errors from a thunk
+
+```ts
+const newTicket = await dispatch(createTicket(values)).unwrap()
+```
+A dispatched thunk always resolves, even on failure. `unwrap()` gives you the result, or throws if it failed, so normal `try/catch` works. Use it when the component needs to react, such as navigating after success.
+
+#### `store/hooks.ts`
+
+```ts
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+export const useAppSelector = useSelector.withTypes<RootState>()
+```
+Typed versions of the Redux hooks, so `state.tickets.items` is checked and autocompleted everywhere.
+
+### The service layer
+
+```
+Component -> Redux thunk -> ticketService.ts -> previewBackend.ts
+                                                (Phase 7: Axios -> Express API)
+```
+
+Components never call the backend directly. In Phase 7, the code inside the service files changes to Axios requests, and the components and slices shouldn't need to change. That's the benefit of this layer.
+
+`previewBackend.ts` is the temporary part. It waits 300ms, can throw errors and enforces the role rules, so the app has already been built to handle real server behavior. It doesn't check passwords, and its data resets on reload. Phase 7 deletes it.
+
+### Using `key` again
+
+```tsx
+return <TicketList key={`${scope}:${initialSearch}`} scope={scope} initialSearch={initialSearch} />
+```
+
+The same trick as Phase 3, with one more job. Searching from the top bar changes the URL, which changes the key, so a fresh `TicketList` starts with the new search text. There's no need for an effect to copy the URL into state.
+
+### Bugs found during this phase
+
+- **State update in an effect:** the linter flagged `setTickets(null)` inside an effect in `NotificationMenu`. It belongs in the click handler, because that's the event that causes the change.
+- **Context and component in one file:** exporting both from `AuthContext.tsx` breaks fast refresh, so they're now separate files.
+- **Blank page after moving a file:** the running dev server still looked for the deleted `AuthContext.tsx`. If you rename a file and get a blank page, check the browser console for a 404. Saving the file that imports it, or restarting Vite, clears it.
+
+### Practice exercises
+
+1. Sign in as each of the three accounts and write down what's different. Then find the code responsible for each difference.
+2. Open `/users` as Priya and work out exactly which line sends you away.
+3. Remove the `isRestoringSession` check from `ProtectedRoute`, sign in and refresh the page. Explain what happens, then restore it.
+4. Remove `request.abort()` from `TicketList`, and change `waitForNetwork` to wait `Math.random() * 2000` milliseconds. Click Next and Previous quickly. Explain what you see, then restore both.
+5. Install the Redux DevTools browser extension, then watch the pending and fulfilled actions as you filter tickets.
+6. Remove `.addCase(userLoggedOut, () => initialState)` from `ticketsSlice`. Sign in as Sam, open All Tickets, log out, sign in as Priya and watch closely when you open My Tickets. Restore it afterwards.
+7. Add a `/profile` route that only agents can open, showing their name. Then add it to the sidebar for agents only.

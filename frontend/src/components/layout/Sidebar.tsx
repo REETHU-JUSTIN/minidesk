@@ -1,22 +1,35 @@
 import { LayoutDashboard, LogOut, Settings, Ticket, Tickets, Users } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth, useCurrentUser } from '../../hooks/useAuth'
+import type { UserRole } from '../../types'
 import { Logo } from '../common/Logo'
+
+const allRoles: UserRole[] = ['admin', 'agent', 'customer']
 
 // Keeping the links in an array means adding a page takes one new line, not new JSX.
 const navItems = [
-  { page: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { page: 'my-tickets', label: 'My Tickets', icon: Ticket },
-  { page: 'all-tickets', label: 'All Tickets', icon: Tickets },
-  { page: 'users', label: 'Users', icon: Users },
-  { page: 'settings', label: 'Settings', icon: Settings },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: allRoles },
+  { to: '/tickets/mine', label: 'My Tickets', icon: Ticket, roles: allRoles },
+  { to: '/tickets', label: 'All Tickets', icon: Tickets, roles: ['admin', 'agent'] as UserRole[] },
+  { to: '/users', label: 'Users', icon: Users, roles: ['admin'] as UserRole[] },
+  { to: '/settings', label: 'Settings', icon: Settings, roles: allRoles },
 ]
 
 interface SidebarProps {
-  currentPage: string
   isOpen: boolean
   onClose: () => void
 }
 
-export function Sidebar({ currentPage, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { role } = useCurrentUser()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <>
       {/* Dark backdrop behind the slide-in menu on small screens */}
@@ -32,33 +45,37 @@ export function Sidebar({ currentPage, isOpen, onClose }: SidebarProps) {
         </div>
 
         <nav aria-label="Main" className="flex-1 space-y-1 px-3 py-2">
-          {navItems.map(({ page, label, icon: Icon }) => {
-            const isActive = page === currentPage
-            return (
-              <a
-                key={page}
-                href={`#${page}`}
+          {navItems
+            .filter((item) => item.roles.includes(role))
+            .map(({ to, label, icon: Icon }) => (
+              // NavLink knows whether it matches the URL. "end" stops /tickets from
+              // also being highlighted on /tickets/mine.
+              <NavLink
+                key={to}
+                to={to}
+                end
                 onClick={onClose}
-                aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-primary-soft text-primary-hover' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-primary-soft text-primary-hover' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`
+                }
               >
                 <Icon className="size-4.5" aria-hidden="true" />
                 {label}
-              </a>
-            )
-          })}
+              </NavLink>
+            ))}
         </nav>
 
         <div className="border-t border-slate-200 p-3">
-          <a
-            href="#login"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
           >
             <LogOut className="size-4.5" aria-hidden="true" />
             Logout
-          </a>
+          </button>
         </div>
       </aside>
     </>

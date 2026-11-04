@@ -51,4 +51,4 @@ Run these from the `frontend` folder:
 ## Learning material
 
 - [Learning guide](docs/LEARNING_GUIDE.md)
-- [Interview questions](docs/INTERVIEW_QUESTIONS.md)
+- [Interview guide](docs/INTERVIEW_QUESTIONS.md): every concept explained with code from this project

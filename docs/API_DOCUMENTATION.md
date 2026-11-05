@@ -2,7 +2,7 @@
 
 The API runs at `http://localhost:5000/api`. Data is sent and received as JSON.
 
-**Current status (Phase 5):** data is held in memory and resets when the server restarts. PostgreSQL replaces this in Phase 6. The frontend connects in Phase 7.
+**Current status (Phase 6):** data is stored in PostgreSQL. The frontend connects in Phase 7.
 
 ## Run it
 
@@ -10,6 +10,7 @@ The API runs at `http://localhost:5000/api`. Data is sent and received as JSON.
 cd backend
 npm install
 cp .env.example .env    # then fill in the values
+npm run db:reset        # creates the database and sample data
 npm run dev
 ```
 
@@ -157,7 +158,7 @@ Public. Returns `{ "data": { "status": "ok" } }` when the server is running.
 
 ## Try it
 
-The sample accounts use the `SEED_USER_PASSWORD` value in your `backend/.env`.
+The sample accounts use the password `MiniDesk-Demo-2026`, which is for local development only.
 
 1. Open Postman and send `POST http://localhost:5000/api/auth/login` with a raw JSON body containing `admin@example.com` and that password.
 2. Copy the `token` from the response.

@@ -28,8 +28,16 @@ export type ValidationResult<T> = { ok: true; data: T } | { ok: false; errors: R
 
 export type Validator<T> = (body: Record<string, unknown>) => ValidationResult<T>
 
+// The largest value a PostgreSQL INTEGER column can hold.
+const MAX_ID = 2_147_483_647
+
+function isValidId(value: unknown): boolean {
+  return Number.isInteger(value) && (value as number) > 0 && (value as number) <= MAX_ID
+}
+
 function getTrimmedString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : ''
+  // PostgreSQL can't store the null character, so it's removed before reaching a query.
+  return typeof value === 'string' ? value.replaceAll('\0', '').trim() : ''
 }
 
 function includes<T extends string>(allowed: T[], value: unknown): value is T {
@@ -118,7 +126,7 @@ export const validateUpdateTicket: Validator<UpdateTicketInput> = (body) => {
   if (body.assignedAgentId !== undefined) {
     const agentId = body.assignedAgentId
     // null is allowed here, because it means "unassign this ticket".
-    if (agentId === null || (Number.isInteger(agentId) && (agentId as number) > 0)) {
+    if (agentId === null || isValidId(agentId)) {
       data.assignedAgentId = agentId as number | null
     } else {
       errors.assignedAgentId = 'Assigned agent must be a user ID or null.'
@@ -142,7 +150,7 @@ export const validateComment: Validator<{ message: string }> = (body) => {
 // URL values are always text, so these helpers convert and check them.
 export function parseId(value: unknown): number {
   const id = Number(value)
-  if (!Number.isInteger(id) || id <= 0) throw new AppError(400, 'The ID must be a positive whole number.')
+  if (!isValidId(id)) throw new AppError(400, 'The ID must be a positive whole number.')
   return id
 }
 

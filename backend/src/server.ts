@@ -1,9 +1,10 @@
 import { app } from './app'
+import { pool } from './config/db'
 import { env } from './config/env'
-import { initializeStore } from './services/devStore'
 
 async function start() {
-  await initializeStore()
+  // Check the database first, so a bad setting gives a clear message right away.
+  await pool.query('SELECT 1')
 
   app.listen(env.port, (error) => {
     if (error) {
@@ -15,6 +16,7 @@ async function start() {
 }
 
 start().catch((error) => {
-  console.error('The server failed to start:', error)
+  console.error('The server failed to start:', error.message)
+  console.error('Check the DB_ settings in backend/.env, and that you have run: npm run db:reset')
   process.exit(1)
 })

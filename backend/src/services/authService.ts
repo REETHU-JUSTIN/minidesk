@@ -1,22 +1,23 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import { pool } from '../config/db'
 import { env } from '../config/env'
 import type { LoginInput, PublicUser, RegisterInput } from '../types'
 import { AppError } from '../utils/AppError'
-import { store } from './devStore'
-import type { UserRecord } from './devStore'
 
 // Higher is slower for attackers, and for us. 10 is a common starting point.
 const SALT_ROUNDS = 10
+
+// PostgreSQL's error code for breaking a UNIQUE rule.
+const UNIQUE_VIOLATION = '23505'
 
 // Compared against when an email doesn't exist, so that a login takes about the same
 // time either way. Otherwise response times would reveal which emails have accounts.
 const unusedPasswordHash = bcrypt.hashSync('not-a-real-password', SALT_ROUNDS)
 
-// Every user leaving a service passes through here, so a password hash can't leak.
-export function toPublicUser({ id, name, email, role, createdAt }: UserRecord): PublicUser {
-  return { id, name, email, role, createdAt }
-}
+// Listing columns by name means a query can't return password_hash by accident.
+// AS "createdAt" renames database naming to the names the API uses.
+export const PUBLIC_USER_COLUMNS = 'id, name, email, role, created_at AS "createdAt"'
 
 function createToken(userId: number): string {
   // "sub" (subject) is the standard field for who a token belongs to.
@@ -25,36 +26,48 @@ function createToken(userId: number): string {
 }
 
 export async function register({ name, email, password }: RegisterInput) {
-  if (store.users.some((user) => user.email === email)) {
-    throw new AppError(409, 'An account with this email already exists.')
-  }
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 
-  const newUser: UserRecord = {
-    id: Math.max(0, ...store.users.map((user) => user.id)) + 1,
-    name,
-    email,
-    passwordHash: await bcrypt.hash(password, SALT_ROUNDS),
-    role: 'customer', // public sign-up can only ever create customers
-    createdAt: new Date().toISOString(),
+  try {
+    // $1, $2 and $3 are parameters. The values travel separately from the SQL,
+    // so text from a user can never run as SQL. This is what stops SQL injection.
+    const result = await pool.query<PublicUser>(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, 'customer')
+       RETURNING ${PUBLIC_USER_COLUMNS}`,
+      [name, email, passwordHash],
+    )
+    const user = result.rows[0]
+    return { token: createToken(user.id), user }
+  } catch (error) {
+    // Letting the database enforce uniqueness also covers two sign-ups arriving at once,
+    // which checking first and inserting afterward wouldn't.
+    if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
+      throw new AppError(409, 'An account with this email already exists.')
+    }
+    throw error
   }
-  store.users.push(newUser)
-
-  return { token: createToken(newUser.id), user: toPublicUser(newUser) }
 }
 
 export async function login({ email, password }: LoginInput) {
-  const user = store.users.find((item) => item.email === email)
-  const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? unusedPasswordHash)
+  const result = await pool.query<PublicUser & { passwordHash: string }>(
+    `SELECT ${PUBLIC_USER_COLUMNS}, password_hash AS "passwordHash" FROM users WHERE email = $1`,
+    [email],
+  )
+  const foundUser = result.rows[0]
+  const passwordMatches = await bcrypt.compare(password, foundUser?.passwordHash ?? unusedPasswordHash)
 
   // The same message for both cases, so nobody can find out which emails are registered.
-  if (!user || !passwordMatches) {
+  if (!foundUser || !passwordMatches) {
     throw new AppError(401, 'The email or password is incorrect.')
   }
 
-  return { token: createToken(user.id), user: toPublicUser(user) }
+  // Rest syntax separates the hash from everything else, so it can't reach the response.
+  const { passwordHash: _passwordHash, ...user } = foundUser
+  return { token: createToken(user.id), user }
 }
 
 export async function getUserById(userId: number): Promise<PublicUser | null> {
-  const user = store.users.find((item) => item.id === userId)
-  return user ? toPublicUser(user) : null
+  const result = await pool.query<PublicUser>(`SELECT ${PUBLIC_USER_COLUMNS} FROM users WHERE id = $1`, [userId])
+  return result.rows[0] ?? null
 }

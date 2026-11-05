@@ -1,6 +1,6 @@
 # Node.js and Express
 
-**Current state of the project:** the API works and is tested, but it stores data in memory until PostgreSQL arrives in Phase 6, and the frontend isn't connected until Phase 7. Describe it that way if asked before then.
+**Current state of the project:** the API works, is tested, and stores its data in PostgreSQL. The frontend isn't connected to it until Phase 7. Describe it that way if asked before then.
 
 ---
 
@@ -22,20 +22,20 @@ MiniDesk's whole backend runs on Node. `server.ts` starts it, handlers are `asyn
 
 ```ts
 async function start() {
-  await initializeStore()
+  await pool.query('SELECT 1')
 ```
 
 ```ts
 app.listen(env.port, (error) => {
 ```
 
-- `await` lets setup finish before the server accepts requests.
+- `await` confirms the database is reachable before the server accepts requests.
 - `listen` starts the server. The callback runs when it's ready, or receives an error, for example if the port is taken.
 
 **File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
 
 ```ts
-passwordHash: await bcrypt.hash(password, SALT_ROUNDS),
+const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 ```
 
 - Hashing is deliberately slow. The async version runs it off the main thread, so other requests aren't held up.
@@ -68,7 +68,7 @@ My JavaScript runs on one thread, but Node uses a thread pool and the operating 
 Long CPU-heavy work, which blocks the event loop and delays everyone. That's why I `await bcrypt.hash` instead of using the sync version during requests.
 
 **Where do you use async code?**
-All my controllers and services are `async`, ready for the database calls in Phase 6. I also use it at startup.
+All my controllers and services are `async`, because they wait on database queries. I also use it at startup, to check the database connection.
 
 **Why async bcrypt?**
 Hashing takes real time. `hash` runs it off the main thread, so other requests continue. The one exception is `hashSync` at startup for a dummy hash, when no requests are being served yet.
@@ -204,7 +204,7 @@ export const getTicket: RequestHandler = async (req, res) => {
 
 ```ts
 export async function getTicket(user: PublicUser, ticketId: number): Promise<Ticket> {
-  return toTicket(requireVisibleTicket(user, ticketId))
+  return requireVisibleTicket(user, ticketId)
 }
 ```
 
@@ -212,7 +212,7 @@ export async function getTicket(user: PublicUser, ticketId: number): Promise<Tic
 
 ### 4. Why We Used It
 
-Putting everything in route handlers quickly becomes unmanageable. With layers, Phase 6 only has to change services to use SQL, and the routes and controllers stay as they are. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
+Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: the move from temporary in-memory data to PostgreSQL only changed services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
 
 ### 5. Real-Time Scenario
 
@@ -513,7 +513,7 @@ Frontend checks only help honest users, because anyone can call the API with Pos
 When a server copies all client fields into a record, letting someone set fields like `role`. My validators build new objects with only allowed fields.
 
 **What is injection?**
-When input is treated as code or query syntax. I check types strictly, so objects sent in place of strings are rejected. In Phase 6, parameterized SQL queries will stop SQL injection.
+When input is treated as code or query syntax. I check types strictly, so objects sent in place of strings are rejected, and parameterized SQL queries stop SQL injection.
 
 **How did you implement validation?**
 Validator functions return clean data or field errors, and `validateBody` middleware applies them, returning 400 with errors per field.

@@ -27,7 +27,7 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
   }
 
   // Load the user each time, so a deleted user or changed role takes effect immediately.
-  const user = await getUserById(userId)
+  const user = Number.isInteger(userId) ? await getUserById(userId) : null
   if (!user) {
     next(new AppError(401, 'Your session has expired. Please sign in again.'))
     return

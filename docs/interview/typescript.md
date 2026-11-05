@@ -217,7 +217,7 @@ A type allowing one of several options. `TicketStatus` allows only three strings
 String unions need no runtime code and the values are plain strings, which match JSON from the API. `enum`s generate extra JavaScript. My TypeScript settings also disallow them, through `erasableSyntaxOnly`.
 
 **How did you model ticket status?**
-As a union of three strings, with a `Record` mapping each to a label and a color. The database will mirror it with a `CHECK` constraint in Phase 6.
+As a union of three strings, with a `Record` mapping each to a label and a color. The database mirrors it with a `CHECK` constraint.
 
 ### 8. Follow-up Questions
 

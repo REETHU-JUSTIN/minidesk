@@ -2,7 +2,7 @@
 
 A small support ticket management system, built to learn full-stack development with React, TypeScript, Node.js, Express and PostgreSQL.
 
-**Current status: Phase 5 of 11.** The frontend and API both work, but they aren't connected yet. The frontend runs on a temporary in-browser backend that doesn't check passwords. The API has real login, validation and role checks, and stores data in memory until PostgreSQL arrives in Phase 6. Phase 7 connects the two.
+**Current status: Phase 6 of 11.** The frontend and API both work, but they aren't connected yet. The frontend runs on a temporary in-browser backend that doesn't check passwords. The API has real login, validation and role checks, and stores its data in PostgreSQL. Phase 7 connects the two.
 
 ## Run the frontend
 
@@ -28,10 +28,13 @@ Open http://localhost:5173 and sign in with one of these preview accounts, using
 cd backend
 npm install
 cp .env.example .env    # then fill in the values
+npm run db:reset        # creates the database and sample data
 npm run dev
 ```
 
-The API runs at http://localhost:5000/api. See the [API documentation](docs/API_DOCUMENTATION.md).
+The API runs at http://localhost:5000/api. See the [API documentation](docs/API_DOCUMENTATION.md) and the [database guide](docs/DATABASE_GUIDE.md).
+
+The API's sample accounts use the password `MiniDesk-Demo-2026`, for local development only.
 
 ## Useful commands
 
@@ -56,6 +59,7 @@ Run these from the `frontend` folder:
 | `dotenv` | Loads settings from `.env` |
 | `jsonwebtoken` | Creates and verifies login tokens |
 | `bcrypt` | Hashes passwords |
+| `pg` | Connects to PostgreSQL |
 | `typescript`, `tsx` | Static types, and running TypeScript directly in development |
 
 **Frontend**

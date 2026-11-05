@@ -14,7 +14,7 @@ Fast hashes aren't suitable, because attackers can try billions of guesses per s
 
 ### 2. Project Implementation
 
-`authService.ts` hashes on sign-up and compares on login. Hashes stay in `UserRecord`, and `toPublicUser` removes them from anything leaving a service.
+`authService.ts` hashes on sign-up and compares on login. Only the login query reads the hash, and every other query lists safe columns by name.
 
 ### 3. Code Reference
 
@@ -25,22 +25,25 @@ const SALT_ROUNDS = 10
 ```
 
 ```ts
-passwordHash: await bcrypt.hash(password, SALT_ROUNDS),
+const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 ```
 
 ```ts
-const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? unusedPasswordHash)
+const passwordMatches = await bcrypt.compare(password, foundUser?.passwordHash ?? unusedPasswordHash)
 ```
 
 ```ts
-export function toPublicUser({ id, name, email, role, createdAt }: UserRecord): PublicUser {
-  return { id, name, email, role, createdAt }
-}
+export const PUBLIC_USER_COLUMNS = 'id, name, email, role, created_at AS "createdAt"'
+```
+
+```ts
+const { passwordHash: _passwordHash, ...user } = foundUser
 ```
 
 - Each increase in rounds doubles the work.
 - When an email doesn't exist, `compare` still runs against a dummy hash, so response time doesn't reveal which emails have accounts.
-- `toPublicUser` builds a new object from named fields, so a hash can't slip through.
+- Queries list safe columns by name, so `password_hash` can't be returned by accident.
+- Login is the one query that needs the hash, and rest syntax removes it before the user is returned.
 
 ### 4. Why We Used It
 
@@ -73,7 +76,7 @@ It's designed to be fast, which helps attackers. bcrypt is slow on purpose and i
 As bcrypt hashes with 10 rounds. Plain passwords exist only briefly in memory during a request.
 
 **How do you keep hashes from the client?**
-Every user passes through `toPublicUser`, which picks only safe fields. My tests scan every API response for anything that looks like a hash, and found none.
+My queries list safe columns by name instead of using `SELECT *`, and login removes the hash before returning the user. My tests scan every API response for anything that looks like a hash, and found none.
 
 ### 8. Follow-up Questions
 
@@ -118,7 +121,7 @@ const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
 ```
 
 ```ts
-const user = await getUserById(userId)
+const user = Number.isInteger(userId) ? await getUserById(userId) : null
 ```
 
 ```ts
@@ -221,7 +224,7 @@ if (changes.assignedAgentId !== undefined && changes.assignedAgentId !== user.id
 **File:** [backend/src/services/commentService.ts](../../backend/src/services/commentService.ts)
 
 ```ts
-requireVisibleTicket(user, ticketId)
+await requireVisibleTicket(user, ticketId)
 ```
 
 - Comments reuse the same check, so they can't become a way around it.
@@ -263,4 +266,4 @@ In `requireVisibleTicket`, which reads, updates, deletes and comments all go thr
 
 - **Why does the comment author come from the token, not the request?** Otherwise anyone could post as anyone. My validator drops a sent `userId`, and a test confirmed this.
 - **How would you add a new role?** Add it to the union type, then to the `authorize` calls and service rules. TypeScript helps find the places.
-- **Should rules live in the database?** Filtering there is efficient, and Phase 6 can do that in `WHERE` clauses, though the app still decides what's allowed.
+- **Should rules live in the database?** Filtering there is efficient, and my ticket list does that with a `WHERE` clause on the customer, though the app still decides what's allowed.

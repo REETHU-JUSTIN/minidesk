@@ -822,3 +822,50 @@ A script ran 120 checks against the running server, for every endpoint and role.
 4. Move `app.use(errorHandler)` above the routes in `app.ts`. Trigger an error, and explain what happens. Then restore it.
 5. Remove `authorize('admin')` from the delete route, and try deleting as a customer. Then restore it.
 6. Add a `GET /api/tickets/:id/comments/count` endpoint, going through a route, a controller and a service. Then remove it.
+
+## Phase 6: PostgreSQL database and SQL
+
+The full explanations are in the [PostgreSQL and SQL](interview/postgresql.md) guide. The diagram and setup steps are in the [database guide](DATABASE_GUIDE.md).
+
+### What changed
+
+Temporary storage is gone, and all data now lives in PostgreSQL, so it survives restarts. The sample accounts now share the documented password `MiniDesk-Demo-2026`.
+
+Only the service files changed their logic. The routes and controllers didn't change at all, which is the benefit of separating layers.
+
+| File | Purpose |
+|---|---|
+| `database/schema.sql` | Tables, rules and indexes |
+| `database/seed.sql` | Sample data |
+| `backend/src/config/db.ts` | The connection pool |
+| `backend/src/scripts/resetDatabase.ts` | `npm run db:reset`, added so setup is one command |
+| `backend/src/services/*` | Now run SQL queries |
+
+### Follow one query through
+
+Here's what happens for `GET /api/tickets?status=open&page=2` from a customer:
+
+1. `parseTicketQuery` checks the options and fills in defaults.
+2. `listTickets` adds `t.customer_id = $1`, because the user is a customer. Then it adds `t.status = $2`.
+3. A `COUNT` query with that `WHERE` gives the total for pagination.
+4. A second query joins `users` twice to get names, then sorts, then uses `LIMIT` and `OFFSET` to get page 2.
+5. Column aliases such as `AS "customerName"` turn the rows directly into the API's format.
+
+### How this phase was tested
+
+Everything was tested on a temporary PostgreSQL server, separate from your real databases:
+
+- **Database rules:** 9 bad writes run directly in SQL were all rejected. `CASCADE` and `SET NULL` were confirmed.
+- **Indexes:** `EXPLAIN` on 20,000 extra rows showed them in use.
+- **API:** all 120 earlier checks passed, plus 35 new ones covering SQL injection, data surviving a restart and simultaneous requests.
+
+Testing caught something the in-memory version couldn't: IDs too large for an `INTEGER` column, and text containing a null character, both of which PostgreSQL refuses. Without extra validation these would have caused 500 errors, so the validators now handle them.
+
+### Practice exercises
+
+1. Run the three queries under "Try it" in the [database guide](DATABASE_GUIDE.md).
+2. Change `LEFT JOIN` to `JOIN` for the agent in `ticketService.ts`, then list the tickets. Which ones disappear, and why? Restore it afterwards.
+3. In `psql`, try inserting a ticket with a status of `banana`, then read the error.
+4. Run `DELETE FROM tickets WHERE id = 1006;`, and check that its comments are gone. Then run `npm run db:reset` to bring them back.
+5. Write a query showing how many tickets each agent has, including agents with none. You'll need `LEFT JOIN` and `GROUP BY`.
+6. Change a parameterized query to build its SQL by joining strings, then send `' OR 1=1 --` as the search. See what happens, then restore it.

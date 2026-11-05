@@ -16,15 +16,14 @@ if (jwtSecret.length < 32) {
   throw new Error('JWT_SECRET must be at least 32 characters long.')
 }
 
-const seedUserPassword = requireEnv('SEED_USER_PASSWORD')
-if (seedUserPassword.length < 8) {
-  throw new Error('SEED_USER_PASSWORD must be at least 8 characters long.')
-}
-
 export const env = {
   port: Number(process.env.PORT ?? 5000),
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret,
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '1d') as SignOptions['expiresIn'],
-  seedUserPassword,
+  dbHost: process.env.DB_HOST ?? 'localhost',
+  dbPort: Number(process.env.DB_PORT ?? 5432),
+  dbName: process.env.DB_NAME ?? 'minidesk',
+  dbUser: process.env.DB_USER ?? 'postgres',
+  dbPassword: requireEnv('DB_PASSWORD'),
 }

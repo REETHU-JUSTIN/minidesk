@@ -385,20 +385,20 @@ first(['a', 'b'])   // T is string
 
 ### 2. Project Implementation
 
-- **`paginate<T>`:** works with any list.
 - **`useDebounce<T>`:** works with any value.
 - **`PaginatedResponse<T>`:** any kind of paged data.
+- **`ApiResponse<T>`:** the wrapper around every API result.
 - **Library generics:** `useState<...>`, `useRef<...>`, `useForm<...>` and `Record<...>`.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/utils/previewData.ts](../../frontend/src/utils/previewData.ts)
+**File:** [frontend/src/hooks/useDebounce.ts](../../frontend/src/hooks/useDebounce.ts)
 
 ```ts
-export function paginate<T>(items: T[], page: number, pageSize: number): PaginatedResponse<T> {
+export function useDebounce<T>(value: T, delay: number): T {
 ```
 
-- Passing `Ticket[]` makes `T` become `Ticket`, so the result holds `Ticket[]`.
+- Passing a string makes `T` become `string`, so the result is a string too.
 
 **File:** [frontend/src/types/index.ts](../../frontend/src/types/index.ts)
 
@@ -421,11 +421,11 @@ export interface PaginatedResponse<T> {
 
 ### 4. Why We Used It
 
-Without generics, I'd need a separate `paginate` per type, or use `any` and lose all checking. Generics give one reusable function that keeps the exact types.
+Without generics, I'd need a separate response type for every endpoint, or use `any` and lose all checking. Generics give one reusable definition that keeps the exact types.
 
 ### 5. Real-Time Scenario
 
-The ticket list calls `paginate(tickets, page, limit)`. Back in the page, `ticket.title` autocompletes and `ticket.banana` is an error, because TypeScript carried the `Ticket` type all the way through.
+`getTickets` asks Axios for `ApiResponse<PaginatedResponse<Ticket>>`. Back in the page, `ticket.title` autocompletes and `ticket.banana` is an error, because TypeScript carried the `Ticket` type all the way through.
 
 ### 6. Interview Questions
 
@@ -440,10 +440,10 @@ The ticket list calls `paginate(tickets, page, limit)`. Back in the page, `ticke
 Types with a placeholder filled in at use. They allow reusable code that keeps its type information.
 
 **Why not `any`?**
-`any` turns checking off, so the result loses its type. With `paginate<T>`, passing tickets gives back tickets. I confirmed that accessing a non-existent field on the result is a type error.
+`any` turns checking off, so the result loses its type. With `useDebounce<T>`, passing a string gives back a string, and using it as something else is a type error.
 
 **Have you written a generic function?**
-Yes, `useDebounce<T>` and `paginate<T>`. `useDebounce` returns the same type it's given, so a debounced string stays a string.
+Yes, `useDebounce<T>` returns the same type it's given, so a debounced string stays a string. I also wrote generic types, `PaginatedResponse<T>` and `ApiResponse<T>`, which are combined when calling the API.
 
 **Where else do you use them?**
 `useState<TicketFilterValues>`, `useRef<HTMLDivElement>`, `useForm<CreateTicketInput>` and Redux's `useSelector.withTypes<RootState>`.

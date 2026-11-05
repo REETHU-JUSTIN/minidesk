@@ -163,7 +163,7 @@ A signed-out agent opens a bookmarked link to `/tickets/1006`. `ProtectedRoute` 
 A wrapper component checks auth. It returns `<Navigate>` to redirect, or `<Outlet />` to continue.
 
 **Do they make an app secure?**
-No. The code runs in the browser and can be changed, and anyone can call the API directly. They only control what the screen shows. The server has to enforce the rules, which I add in Phase 5.
+No. The code runs in the browser and can be changed, and anyone can call the API directly. They only control what the screen shows. The server has to enforce the rules, which MiniDesk does.
 
 **How did you implement role-based access?**
 `ProtectedRoute` takes an optional `allowedRoles` array. The sidebar also filters its links by role, and buttons check the role too.
@@ -258,5 +258,5 @@ It navigates to the ticket list with `?search=` in the URL. `TicketListPage` rea
 ### 8. Follow-up Questions
 
 - **Why are only searches in the URL, and not all filters?** To keep the code simple. Putting all filters there would make them shareable, and is a sensible next step.
-- **What if a customer changes the ID in the URL to someone else's ticket?** The data layer returns "not found". That's enforced outside the UI, and Phase 5 enforces it on the server.
+- **What if a customer changes the ID in the URL to someone else's ticket?** The API returns 404, and the page shows "We couldn't find that ticket." That's enforced on the server, so changing frontend code doesn't help.
 - **What does `Number('abc')` give?** `NaN`, and `Number.isInteger(NaN)` is false, so the check catches it.

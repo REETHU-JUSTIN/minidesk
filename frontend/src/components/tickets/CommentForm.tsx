@@ -24,6 +24,11 @@ export function CommentForm({ onAddComment }: CommentFormProps) {
       textareaRef.current?.focus()
       return
     }
+    if (trimmedMessage.length > 2000) {
+      setError('Keep your comment to 2000 characters or fewer.')
+      textareaRef.current?.focus()
+      return
+    }
 
     setIsPosting(true)
     setError('')

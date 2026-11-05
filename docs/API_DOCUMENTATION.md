@@ -2,7 +2,7 @@
 
 The API runs at `http://localhost:5000/api`. Data is sent and received as JSON.
 
-**Current status (Phase 6):** data is stored in PostgreSQL. The frontend connects in Phase 7.
+Data is stored in PostgreSQL, and the frontend calls this API through `frontend/src/services/`.
 
 ## Run it
 

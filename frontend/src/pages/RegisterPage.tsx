@@ -7,7 +7,7 @@ import { Input } from '../components/common/Input'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
 import type { RegisterInput } from '../types'
-import { emailRules, newPasswordRules } from '../utils/validationRules'
+import { emailRules, nameRules, newPasswordRules } from '../utils/validationRules'
 
 // Adds a field that only the form needs. The password check happens here,
 // so the confirmation is never sent to the server.
@@ -45,9 +45,7 @@ export function RegisterPage() {
           label="Full name"
           autoComplete="name"
           error={errors.name?.message}
-          {...register('name', {
-            validate: (value) => value.trim().length >= 2 || 'Enter your full name.',
-          })}
+          {...register('name', nameRules)}
         />
         <Input
           id="email"

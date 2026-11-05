@@ -155,7 +155,7 @@ A customer clicks **Create Ticket** with an empty form. `handleSubmit` runs the 
 It handles values, validation and submission with little code, and few re-renders. `CommentForm` shows the manual approach, which is fine for one field, but gets repetitive as a form grows.
 
 **Is client-side validation enough?**
-No. It gives quick feedback, but anyone can skip it by calling the API directly with a tool like Postman. The server must validate too, which MiniDesk adds in Phase 5.
+No. It gives quick feedback, but anyone can skip it by calling the API directly with a tool like Postman. The server must validate too, which MiniDesk does.
 
 **How did you validate your forms?**
 With React Hook Form and shared rules in `validationRules.ts`. Errors pass to my `Input` component, which displays them and connects them for screen readers.

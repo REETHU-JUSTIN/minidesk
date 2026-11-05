@@ -1,7 +1,5 @@
 # Node.js and Express
 
-**Current state of the project:** the API works, is tested, and stores its data in PostgreSQL. The frontend isn't connected to it until Phase 7. Describe it that way if asked before then.
-
 ---
 
 ## Node.js and the Event Loop

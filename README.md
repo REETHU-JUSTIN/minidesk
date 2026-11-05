@@ -1,12 +1,30 @@
 # MiniDesk
 
-A small support ticket management system, built to learn full-stack development with React, TypeScript, Node.js, Express and PostgreSQL.
+A full-stack support ticket management system, built with React, TypeScript, Node.js, Express and PostgreSQL.
 
-**Current status: Phase 6 of 11.** The frontend and API both work, but they aren't connected yet. The frontend runs on a temporary in-browser backend that doesn't check passwords. The API has real login, validation and role checks, and stores its data in PostgreSQL. Phase 7 connects the two.
+Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role sees only what it's allowed to.
 
-## Run the frontend
+**Current status: Phase 7 of 11.** The frontend, API and database work together. Automated tests arrive in Phase 8, and Docker in Phase 9.
 
-You need Node.js 22.12 or newer.
+## Run the project
+
+You need Node.js 22.12 or newer, and PostgreSQL.
+
+### 1. Start the API
+
+```bash
+cd backend
+npm install
+cp .env.example .env    # then fill in the values, including DB_PASSWORD
+npm run db:reset        # creates the database and sample data
+npm run dev
+```
+
+`db:reset` deletes any existing data in the `minidesk` database.
+
+### 2. Start the frontend
+
+In a second terminal:
 
 ```bash
 cd frontend
@@ -14,39 +32,28 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and sign in with one of these preview accounts, using any password:
+Open http://localhost:5173 and sign in with a sample account. All of them use the password `MiniDesk-Demo-2026`, which is for local development only.
 
 | Email | Role |
 |---|---|
 | `admin@example.com` | Admin |
-| `sam@example.com` | Agent |
-| `priya@example.com` | Customer |
+| `sam@example.com`, `maya@example.com` | Agent |
+| `priya@example.com`, `liam@example.com`, `noah@example.com` | Customer |
 
-## Run the API
-
-```bash
-cd backend
-npm install
-cp .env.example .env    # then fill in the values
-npm run db:reset        # creates the database and sample data
-npm run dev
-```
-
-The API runs at http://localhost:5000/api. See the [API documentation](docs/API_DOCUMENTATION.md) and the [database guide](docs/DATABASE_GUIDE.md).
-
-The API's sample accounts use the password `MiniDesk-Demo-2026`, for local development only.
+The API only accepts browser requests from `CLIENT_ORIGIN` in `backend/.env`. If Vite starts on a different port because 5173 is taken, update that setting or free the port.
 
 ## Useful commands
 
-Run these from the `frontend` folder:
-
-| Command | What it does |
-|---|---|
-| `npm run dev` | Starts the development server with hot reload |
-| `npx tsc -b` | Checks TypeScript types |
-| `npm run lint` | Checks for common code problems |
-| `npm run build` | Type-checks and creates a production build in `dist/` |
-| `npm run preview` | Serves the production build locally |
+| Folder | Command | What it does |
+|---|---|---|
+| Both | `npm run dev` | Starts in development mode with automatic reloads |
+| Both | `npm run lint` | Checks for common code problems |
+| Both | `npm run build` | Creates a production build |
+| `frontend` | `npx tsc -b` | Checks TypeScript types |
+| `frontend` | `npm run preview` | Serves the production build locally |
+| `backend` | `npm run typecheck` | Checks TypeScript types |
+| `backend` | `npm start` | Runs the production build |
+| `backend` | `npm run db:reset` | Rebuilds the database and sample data |
 
 ## Installed packages
 
@@ -74,9 +81,12 @@ Run these from the `frontend` folder:
 | `react-hook-form` | Form state and validation |
 | `react-router-dom` | Page routing |
 | `@reduxjs/toolkit`, `react-redux` | Global state for tickets and dashboard data |
+| `axios` | HTTP requests to the API |
 | `oxlint` | Linter, included by the Vite template |
 
-## Learning material
+## Documentation
 
+- [API documentation](docs/API_DOCUMENTATION.md)
+- [Database guide](docs/DATABASE_GUIDE.md)
 - [Learning guide](docs/LEARNING_GUIDE.md)
 - [Interview guide](docs/INTERVIEW_QUESTIONS.md): every concept explained with code from this project

@@ -83,7 +83,7 @@ Every component reading a context re-renders when its value changes, even if it 
 Otherwise each provider render creates a new object, which counts as a change and re-renders every reader. `useMemo` keeps the same object until its contents actually change.
 
 **How did you implement authentication state?**
-`AuthProvider` holds `user` and `isRestoringSession`, and provides `login`, `register` and `logout`. On startup, an effect restores any saved session. Right now, sign-in uses a temporary backend that doesn't check passwords. Real JWT login arrives in Phase 7.
+`AuthProvider` holds `user` and `isRestoringSession`, and provides `login`, `register` and `logout`. Login stores a JWT in `localStorage`. On startup, an effect calls `/auth/me` to restore the session. If any request finds the token has expired, a handler registered with the Axios interceptor signs the user out.
 
 **Why a `useAuth` Hook?**
 It hides `useContext`, gives a clear error if the provider is missing, and lets me add `useCurrentUser` for pages where a user always exists.

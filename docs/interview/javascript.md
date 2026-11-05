@@ -23,14 +23,13 @@ Used throughout MiniDesk: as array method callbacks, as event handlers, and as p
 
 ### 3. Code Reference
 
-**File:** [frontend/src/utils/previewData.ts](../../frontend/src/utils/previewData.ts)
+**File:** [frontend/src/components/layout/Sidebar.tsx](../../frontend/src/components/layout/Sidebar.tsx)
 
-```ts
-const countByStatus = (status: Ticket['status']) => tickets.filter((ticket) => ticket.status === status).length
+```tsx
+.filter((item) => item.roles.includes(role))
 ```
 
-- `countByStatus` is an arrow function with an implicit return.
-- `(ticket) => ticket.status === status` is a callback that `filter` calls for each ticket.
+- This is an arrow function with an implicit return, used as a callback that `filter` calls for each sidebar link.
 
 **File:** [frontend/src/pages/TicketDetailsPage.tsx](../../frontend/src/pages/TicketDetailsPage.tsx)
 
@@ -60,7 +59,7 @@ An admin clicks **Delete Ticket**. The button runs the `onDeleteClick` callback 
 Arrow functions are shorter, can return implicitly, and have no `this` or `arguments` of their own. In MiniDesk's function components, I don't rely on `this` at all, so arrow functions are a natural choice for callbacks.
 
 **What is a callback?**
-A function passed to something else to be called later. `filter` calls mine for each ticket, and `TicketManagePanel` calls `onDeleteClick` when its button is clicked.
+A function passed to something else to be called later. `filter` calls mine for each sidebar link, and `TicketManagePanel` calls `onDeleteClick` when its button is clicked.
 
 **Why `() => doThing()`?**
 `doThing()` calls the function during render and passes its result as the handler. The arrow function creates a new function that runs only when clicked.
@@ -235,39 +234,36 @@ I create a new one. My filter handler does `{ ...currentFilters, ...changes }`. 
 
 ### 2. Project Implementation
 
-- `map` renders every list and table, and replaces an updated ticket.
-- `filter` applies filters and removes a deleted ticket.
-- `find` looks up a ticket or user.
-- `some` checks for a duplicate email at sign-up.
-- `sort` orders tickets, on a copy.
+- `map` renders every list and table, and replaces an updated ticket in Redux.
+- `filter` chooses sidebar links by role, and removes a deleted ticket from Redux.
+- `split`, `slice`, `map` and `join` build a user's initials.
+
+Filtering and sorting tickets happen in SQL on the server, which is far more efficient than doing it in JavaScript.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/previewBackend.ts](../../frontend/src/services/previewBackend.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
 
 ```ts
-tickets = tickets.map((item) => (item.id === ticketId ? updatedTicket : item))
+state.items = state.items.map((ticket) => (ticket.id === updatedTicket.id ? updatedTicket : ticket))
 ```
 
 - Replaces one ticket and keeps the others, in a new array.
 
 ```ts
-tickets = tickets.filter((ticket) => ticket.id !== ticketId)
+state.items = state.items.filter((ticket) => ticket.id !== action.payload)
 ```
 
 - Removes a ticket by keeping all the others.
 
-```ts
-if (users.some((user) => user.email === normalizedEmail)) {
-```
-
-- Stops as soon as one match is found.
+**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
 
 ```ts
-const sorted = [...filterTickets(visible, { search, status, priority })].sort(
+const changedColumns = columns.filter(([, value]) => value !== undefined)
+const setClauses = changedColumns.map(([column], index) => `${column} = $${index + 1}`)
 ```
 
-- Copies before sorting, because `sort` changes the array it's called on.
+- Array methods build the SQL for an update, using only the fields that were sent.
 
 **File:** [frontend/src/utils/getInitials.ts](../../frontend/src/utils/getInitials.ts)
 
@@ -281,7 +277,7 @@ They describe the result you want, so they're easier to read than loops. They al
 
 ### 5. Real-Time Scenario
 
-An admin deletes ticket #1006. The backend uses `filter` to remove it and its comments. When Redux hears about it, its reducer also uses `filter`, so the ticket leaves the list without a full reload.
+An admin deletes ticket #1006. The API removes it from the database. When Redux hears about it, its reducer uses `filter`, so the ticket leaves the list without a full reload.
 
 ### 6. Interview Questions
 
@@ -293,22 +289,22 @@ An admin deletes ticket #1006. The backend uses `filter` to remove it and its co
 ### 7. Project-Based Answers
 
 **What's the difference?**
-`map` transforms each item, `filter` keeps matching items, `find` returns the first match, and `reduce` combines items into one value. I use `map` to render ticket rows and `filter` to count tickets by status.
+`map` transforms each item, `filter` keeps matching items, `find` returns the first match, and `reduce` combines items into one value. I use `map` to render ticket rows and `filter` to choose sidebar links by role.
 
 **`map` versus `forEach`?**
 `map` returns a new array. `forEach` returns nothing and is only for side effects. JSX needs returned values, so lists use `map`.
 
 **Where have you used these?**
-`getInitials` chains `split`, `slice`, `map` and `join`. `getDashboardStats` uses `filter` to count tickets, and `find` looks up a ticket by ID.
+`getInitials` chains `split`, `slice`, `map` and `join`. My Redux reducers use `map` and `filter` to update the ticket list immutably, and my update query builds its `SET` clause with them.
 
 **Which changes the original?**
-`sort` does, so I spread the array into a copy first. `reverse` and `push` also change the original.
+`sort` does, so you'd spread the array into a copy first, or use `toSorted`. `reverse` and `push` also change the original. MiniDesk's tickets are sorted in SQL, so this doesn't come up in the current code.
 
 ### 8. Follow-up Questions
 
-- **How would you write the status counts with `reduce`?** Start with zeroed counts, then add one to the matching status for each ticket, returning the running total.
-- **Why does `sort` subtract dates?** The compare function returns a negative or positive number to set the order. `b - a` gives newest first.
-- **What does `find` return if there's no match?** `undefined`, and TypeScript makes me handle that.
+- **How would you count tickets by status with `reduce`?** Start with zeroed counts, then add one to the matching status for each ticket, returning the running total. I do this in SQL instead.
+- **How does a `sort` compare function work?** It returns a negative or positive number to set the order. `b - a` on timestamps gives newest first.
+- **What does `find` return if there's no match?** `undefined`, which TypeScript makes you handle.
 
 ---
 
@@ -391,27 +387,31 @@ JavaScript runs one thing at a time, so slow work like a network request must no
 
 ### 2. Project Implementation
 
-- **`previewBackend.ts`:** every function is async, like a real server call.
+- **Frontend services:** every API call is async.
+- **Backend services:** every database query is async.
 - **`dashboardSlice.ts`:** `Promise.all` loads two things together.
 - **`CommentForm.tsx`:** `try`/`catch`/`finally` handles a failed post.
 - **Local data loading:** `TicketComments` and `UsersPage` use `.then` and `.catch`.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/previewBackend.ts](../../frontend/src/services/previewBackend.ts)
+**File:** [frontend/src/services/authService.ts](../../frontend/src/services/authService.ts)
 
 ```ts
-function waitForNetwork(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 300))
+export async function login(input: LoginInput): Promise<User> {
+  const response = await api.post<ApiResponse<AuthResult>>('/auth/login', input)
+  saveToken(response.data.data.token)
+  return response.data.data.user
 }
 ```
 
-- Creates a Promise that fulfills after 300ms, simulating network delay.
+- `await` pauses this function until the response arrives, and the next lines read like normal code.
+- It returns a `Promise<User>`, because `async` functions always return a Promise.
 
 **File:** [frontend/src/features/dashboard/dashboardSlice.ts](../../frontend/src/features/dashboard/dashboardSlice.ts)
 
 ```ts
-const [stats, recentTickets] = await Promise.all([getDashboardStats(), getTickets({ limit: 5 })])
+const [stats, recentTickets] = await Promise.all([getDashboardStats(signal), getTickets({ limit: 5 }, signal)])
 ```
 
 - Starts both requests at once, and waits for both. If either fails, the whole thing fails.
@@ -437,7 +437,7 @@ Waiting for a server without blocking the UI is essential. `async`/`await` reads
 
 ### 5. Real-Time Scenario
 
-A customer opens the dashboard. Stats and recent tickets are requested together, and the page shows a spinner while the rest of the app stays responsive. When both finish, the page updates at once. In this preview, that takes about 300ms in total, instead of about 600ms one after the other.
+A customer opens the dashboard. Stats and recent tickets are requested together, and the page shows a spinner while the rest of the app stays responsive. When both finish, the page updates at once. Running them together takes about as long as the slower of the two, rather than the two added together.
 
 ### 6. Interview Questions
 
@@ -672,7 +672,7 @@ A file can have many named exports, imported by their exact names, but only one 
 The build tool removing exports that nothing uses. It's why I can import single icons from `lucide-react` without shipping the whole library.
 
 **How did you organize them?**
-By job: `components`, `pages`, `hooks`, `services`, `features` and `store`. Pages import from these folders, and components never call `previewBackend` directly.
+By job: `components`, `pages`, `hooks`, `services`, `features` and `store`. Pages import from these folders, and components never call Axios directly.
 
 ### 8. Follow-up Questions
 

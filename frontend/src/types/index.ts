@@ -87,6 +87,16 @@ export interface DashboardStats {
   resolved: number
 }
 
+// Every successful API response wraps its result in a "data" field.
+export interface ApiResponse<T> {
+  data: T
+}
+
+export interface AuthResult {
+  token: string
+  user: User
+}
+
 // A generic type: T is a placeholder filled in when it's used,
 // so PaginatedResponse<Ticket> has items of type Ticket[].
 export interface PaginatedResponse<T> {

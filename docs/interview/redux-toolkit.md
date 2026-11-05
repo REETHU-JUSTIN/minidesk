@@ -128,7 +128,7 @@ Reducers can't do async work. A **thunk** is where it goes. `createAsyncThunk` w
 **File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
 
 ```ts
-export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery) => ticketService.getTickets(query))
+export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery, { signal }) => ticketService.getTickets(query, signal))
 ```
 
 ```ts
@@ -139,6 +139,7 @@ export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: Ticket
 
 - `'tickets/fetchList'` is the prefix for the three action names.
 - `action.payload` is whatever the async function returned.
+- `signal` lets a component cancel the real HTTP request.
 
 **File:** [frontend/src/pages/CreateTicketPage.tsx](../../frontend/src/pages/CreateTicketPage.tsx)
 
@@ -288,7 +289,7 @@ Search and pagination fire requests quickly. Without this, a user could see page
 
 ### 5. Real-Time Scenario
 
-An agent clicks **Next**, then **Previous** straight away. The page 2 request is aborted, and page 1 is requested. Even if page 2's data was slower or faster, only page 1's result is applied. An automated test does exactly this and confirms the rows match the label.
+An agent clicks **Next**, then picks a filter straight away. The page 2 request is aborted, and the new one is sent. Even if the page 2 response would have been slower, only the newest result is applied. A browser test delays that older request on purpose, and confirms it's cancelled and can't overwrite the newer rows.
 
 ### 6. Interview Questions
 
@@ -309,10 +310,10 @@ Cancelling old requests, ignoring them with a flag or request ID, or using a dat
 My effect's cleanup calls `request.abort()`, so changing a filter cancels the previous request. The reducer ignores aborted rejections, so they don't show as errors. In local-state components, I use an `isCancelled` flag.
 
 **How did you test it?**
-A browser test clicks Next and Previous quickly, then checks that the page label and rows match the last request.
+A browser test delays an older request by over a second, then changes the filter. It checks that the request was cancelled, and that the rows match the newest request.
 
 ### 8. Follow-up Questions
 
-- **Does `abort` really stop the network request?** The thunk abort stops its result being used. To cancel the actual HTTP request, you pass its `signal` to Axios or `fetch`, which I can do in Phase 7.
+- **Does `abort` really stop the network request?** Yes, because the thunk passes its `signal` to Axios. Without that, the abort would only stop the result being used. A browser test confirmed the request is really cancelled.
 - **How do debouncing and this work together?** Debouncing reduces how many requests start, while cancellation handles those that overlap anyway.
 - **Why use a flag in some components?** They don't use Redux thunks, so there's no `abort` available. A flag is the simple equivalent.

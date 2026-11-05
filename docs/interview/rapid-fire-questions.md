@@ -114,7 +114,7 @@ It's an indexed access type, meaning "the type of the `status` field on `Ticket`
 Browsers already define a global DOM type called `Comment`. Reusing that name is confusing, and a missing import could silently refer to the wrong type. `TicketComment` avoids both problems.
 
 **32. Why doesn't the `User` type have a password field?**
-The frontend should never receive a password or hash. Leaving it out documents that rule, and TypeScript rejects code that adds one to a `User` object. The backend is still what actually keeps it from being sent, which comes in Phase 5.
+The frontend should never receive a password or hash. Leaving it out documents that rule, and TypeScript rejects code that adds one to a `User` object. The backend is still what actually keeps it from being sent.
 
 ### JavaScript
 
@@ -176,7 +176,7 @@ Call Hooks only at the top level of a component or custom hook, never inside con
 A function starting with `use` that calls other Hooks, used to share logic. MiniDesk's `useCloseOnOutside` exists because two menus need identical behavior. Each component that calls a custom hook gets its own separate state.
 
 **50. Explain how `useDebounce` works.**
-Each change to the value runs the effect's cleanup, which cancels the waiting timer, then starts a new one. The delayed value updates only when the input has been quiet for the full delay. In Phase 7, this means one API request after typing stops rather than one per keystroke.
+Each change to the value runs the effect's cleanup, which cancels the waiting timer, then starts a new one. The delayed value updates only when the input has been quiet for the full delay. This means one API request after typing stops rather than one per keystroke.
 
 **51. What's the difference between debouncing and throttling?**
 Debouncing waits until activity stops, which suits search boxes. Throttling allows at most one call per time period during continuous activity, which suits scroll or resize handlers.
@@ -205,7 +205,7 @@ It handles field values, validation, errors and submission with little code and 
 It stops the browser's default behavior of submitting the form and reloading the page, so the app can handle submission itself. React Hook Form's `handleSubmit` calls it for you.
 
 **59. Is client-side validation enough?**
-No. It improves the experience, but anyone can bypass it by calling the API directly with a tool like Postman. The server must validate again, which MiniDesk does from Phase 5.
+No. It improves the experience, but anyone can bypass it by calling the API directly with a tool like Postman. The server must validate again, which MiniDesk does.
 
 **60. Why does the title rule use `value.trim()`?**
 A title of only spaces would otherwise pass a `required` check. Trimming first means it counts as empty. Testing confirmed that a spaces-only title is rejected.
@@ -276,7 +276,7 @@ A route without a path that wraps its child routes. It renders `<Outlet />` wher
 A wrapper checks the user. If there isn't one, it returns `<Navigate to="/login" />`. If the role isn't allowed, it redirects to the dashboard. Otherwise, it renders `<Outlet />`.
 
 **80. Do protected routes make an app secure?**
-No. The code runs in the user's browser and can be changed, and anyone can call the API directly. They're only a user experience feature. Real protection is on the server, which MiniDesk adds in Phase 5.
+No. The code runs in the user's browser and can be changed, and anyone can call the API directly. They're only a user experience feature. Real protection is on the server, which MiniDesk does.
 
 **81. Why does `ProtectedRoute` wait for `isRestoringSession`?**
 Checking for a saved session takes time. Without waiting, a refresh would see no user yet and send a signed-in person to login.
@@ -304,7 +304,7 @@ The default value is `null`, so using it outside the provider would otherwise fa
 ### Architecture and security
 
 **88. Why have a service layer?**
-Components and slices depend on functions like `getTickets`, not on how data is fetched. MiniDesk relies on this: Phase 7 swaps the temporary backend for Axios in the service files, and the components shouldn't need to change. It also makes tests easier to write.
+Components and slices depend on functions like `getTickets`, not on how data is fetched. MiniDesk relied on this: replacing its temporary backend with Axios mostly meant rewriting the service files. It also makes tests easier to write.
 
 **89. Why does a customer get the same message for someone else's ticket as for a missing one?**
 A different message would reveal which ticket numbers exist. Returning the same "not found" response avoids leaking that. Tests confirmed the two messages match.
@@ -313,4 +313,4 @@ A different message would reveal which ticket numbers exist. Returning the same 
 Redux lives in memory until the page reloads. Without clearing it, the next person on that browser could briefly see the previous user's tickets. Each slice handles `userLoggedOut` by returning its initial state.
 
 **91. Where do you store a login token, and what are the trade-offs?**
-`localStorage` is simple and survives a refresh, but any script running on the page can read it, so a cross-site scripting bug could expose it. `httpOnly` cookies can't be read by JavaScript, but they need protection against cross-site request forgery. MiniDesk uses `localStorage` from Phase 7 to demonstrate Axios interceptors, and a stricter production app might choose cookies.
+`localStorage` is simple and survives a refresh, but any script running on the page can read it, so a cross-site scripting bug could expose it. `httpOnly` cookies can't be read by JavaScript, but they need protection against cross-site request forgery. MiniDesk uses `localStorage` to demonstrate Axios interceptors, and a stricter production app might choose cookies.

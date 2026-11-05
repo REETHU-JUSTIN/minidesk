@@ -30,9 +30,10 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | [Node.js and Express](interview/nodejs-express.md) | The event loop, REST and status codes, routes and layers, middleware, error handling, validation, environment variables and CORS |
 | [Authentication](interview/authentication.md) | Password hashing with bcrypt, JWT, role-based authorization |
 | [PostgreSQL and SQL](interview/postgresql.md) | Schema design, constraints, joins, aggregation, indexes, parameterized queries, connection pooling |
+| [API integration](interview/api-integration.md) | Axios and interceptors, how the frontend and backend work together |
 | [Rapid-fire review](interview/rapid-fire-questions.md) | 91 short questions for last-minute revision |
 
-Axios, testing, Docker and deployment are added as we build them.
+Testing, Docker and deployment are added as we build them.
 
 ## How to use these notes
 
@@ -43,4 +44,4 @@ Axios, testing, Docker and deployment are added as we build them.
 
 ## Be accurate about the project's current state
 
-An interviewer may look closely at your project, so describe it as it really is. Right now, the frontend and API are separate and not yet connected. The frontend runs on a temporary backend in the browser, which doesn't check passwords. The API has real login and role checks, and stores data in PostgreSQL. Until Phase 7 connects them, don't say the screens save to the database. These notes are updated whenever the code changes.
+An interviewer may look closely at your project, so describe it as it really is. The frontend, API and PostgreSQL database are connected and work together. Automated tests in the repository arrive in Phase 8, and the app isn't deployed yet, so don't claim either until then. These notes are updated whenever the code changes.

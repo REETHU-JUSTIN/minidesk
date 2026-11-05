@@ -1,7 +1,5 @@
 # PostgreSQL and SQL
 
-**Current state of the project:** the API stores everything in PostgreSQL. The frontend isn't connected to the API until Phase 7, so it doesn't save to the database yet.
-
 ---
 
 ## Relational Schema Design

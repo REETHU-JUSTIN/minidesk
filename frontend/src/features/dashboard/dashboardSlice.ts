@@ -17,10 +17,10 @@ const initialState: DashboardState = {
   error: null,
 }
 
-export const fetchDashboard = createAsyncThunk('dashboard/fetch', async () => {
+export const fetchDashboard = createAsyncThunk('dashboard/fetch', async (_: void, { signal }) => {
   // Promise.all starts both requests together and waits for both to finish.
   // If either one fails, the whole thunk is rejected.
-  const [stats, recentTickets] = await Promise.all([getDashboardStats(), getTickets({ limit: 5 })])
+  const [stats, recentTickets] = await Promise.all([getDashboardStats(signal), getTickets({ limit: 5 }, signal)])
   return { stats, recentTickets: recentTickets.items }
 })
 

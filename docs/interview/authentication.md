@@ -1,7 +1,5 @@
 # Authentication and Authorization
 
-**Current state of the project:** the API's login, JWT and role checks work and are tested, but the frontend isn't connected to them until Phase 7. It still uses a temporary sign-in with no password check.
-
 ---
 
 ## Password Hashing with bcrypt
@@ -175,7 +173,7 @@ I tested a missing token, a garbage token, an expired token, a token signed with
 ### 8. Follow-up Questions
 
 - **How would you log someone out everywhere?** Keep a token version on the user and check it in `authenticate`. Since I already load the user per request, this would be a small change.
-- **Where will the frontend store the token?** In `localStorage` from Phase 7, which is simple but readable by scripts if there's an XSS bug. `httpOnly` cookies avoid that, but need CSRF protection.
+- **Where does the frontend store the token?** In `localStorage`, which is simple but readable by scripts if there's an XSS bug. `httpOnly` cookies avoid that, but need CSRF protection.
 - **Why does the token last a day?** A balance between convenience and risk. Stricter apps use short-lived tokens with refresh tokens.
 - **Why load the user on each request, since JWTs are meant to avoid that?** It costs a query, but role changes apply immediately, which matters more here than saving one lookup.
 

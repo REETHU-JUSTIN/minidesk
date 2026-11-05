@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/common/Button'
 import { ErrorMessage } from '../components/common/ErrorMessage'
-import { InfoMessage } from '../components/common/InfoMessage'
 import { Input } from '../components/common/Input'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
@@ -33,8 +32,6 @@ export function LoginPage() {
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your MiniDesk account.">
       <form className="space-y-4" noValidate onSubmit={handleSubmit(submitValidForm)}>
-        {/* TEMPORARY: removed in Phase 7, when real passwords are checked. */}
-        <InfoMessage message="Preview mode: sign in as admin@example.com, sam@example.com or priya@example.com. Any password works until Phase 7." />
         {loginError && <ErrorMessage message={loginError} />}
         <Input
           id="email"

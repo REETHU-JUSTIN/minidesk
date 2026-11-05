@@ -1,6 +1,7 @@
-import type { User, UserRole } from '../types'
-import { listUsers } from './previewBackend'
+import type { ApiResponse, User, UserRole } from '../types'
+import { api } from './api'
 
-export function getUsers(role?: UserRole): Promise<User[]> {
-  return listUsers(role)
+export async function getUsers(role?: UserRole): Promise<User[]> {
+  const response = await api.get<ApiResponse<User[]>>('/users', { params: { role } })
+  return response.data.data
 }

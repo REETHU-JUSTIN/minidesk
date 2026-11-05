@@ -31,9 +31,11 @@ const initialState: TicketsState = {
 
 // createAsyncThunk runs an async function and automatically dispatches three actions:
 // "pending" when it starts, then "fulfilled" on success or "rejected" on failure.
-export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery) => ticketService.getTickets(query))
+// signal is provided by Redux Toolkit. Calling request.abort() in a component cancels
+// the real HTTP request through it.
+export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery, { signal }) => ticketService.getTickets(query, signal))
 
-export const fetchTicketById = createAsyncThunk('tickets/fetchOne', (ticketId: number) => ticketService.getTicketById(ticketId))
+export const fetchTicketById = createAsyncThunk('tickets/fetchOne', (ticketId: number, { signal }) => ticketService.getTicketById(ticketId, signal))
 
 export const createTicket = createAsyncThunk('tickets/create', (input: CreateTicketInput) => ticketService.createTicket(input))
 

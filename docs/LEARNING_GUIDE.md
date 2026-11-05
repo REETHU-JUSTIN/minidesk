@@ -869,3 +869,48 @@ A real database also brings limits that in-memory data doesn't have. PostgreSQL 
 4. Run `DELETE FROM tickets WHERE id = 1006;`, and check that its comments are gone. Then run `npm run db:reset` to bring them back.
 5. Write a query showing how many tickets each agent has, including agents with none. You'll need `LEFT JOIN` and `GROUP BY`.
 6. Change a parameterized query to build its SQL by joining strings, then send `' OR 1=1 --` as the search. See what happens, then restore it.
+
+## Phase 7: API integration and authentication
+
+The full explanations are in the [API integration](interview/api-integration.md) guide.
+
+### What changed
+
+The frontend now talks to the real API, so MiniDesk works as one full-stack application. Real passwords are checked, and everything is saved in PostgreSQL.
+
+| File | Change |
+|---|---|
+| `frontend/src/services/api.ts` | New: the Axios instance and its interceptors |
+| `frontend/src/services/*Service.ts` | Rewritten to call the API |
+| `frontend/src/services/previewBackend.ts`, `utils/previewData.ts` | Deleted, along with the preview login hint |
+| `frontend/src/context/AuthProvider.tsx` | Handles expired sessions, and unreachable servers on startup |
+| `ticketsSlice.ts`, `dashboardSlice.ts` | Pass `signal`, so cancelling stops the real HTTP request |
+| `frontend/src/utils/validationRules.ts` | Matches the API's length limits |
+
+The pages and Redux reducers didn't need to change, which is what the service layer was for.
+
+### Follow the login flow
+
+1. The form validates, then `LoginPage` calls `login` from `useAuth`.
+2. `authService.login` sends `POST /api/auth/login`. No token exists yet.
+3. The API checks the password with bcrypt, and returns a JWT and the user.
+4. `saveToken` stores the token in `localStorage`, and `AuthProvider` stores the user in state.
+5. `GuestRoute` sees a user, and redirects to the requested page.
+6. From now on, the request interceptor attaches the token to every call.
+
+**After a refresh:** React state is gone, but the token isn't. `AuthProvider` calls `GET /api/auth/me`, and `ProtectedRoute` shows a spinner until it answers.
+
+**When a session expires:** the API returns 401. The response interceptor clears the token and calls the handler from `AuthProvider`. That clears the user and Redux, and `ProtectedRoute` redirects to login.
+
+### How this phase was tested
+
+72 checks ran in a real browser, through the frontend and API to a temporary PostgreSQL server, once on the development server and once on the production build. They covered all three roles, data surviving reloads, and failures such as an unreachable server. I also counted real requests, confirming that typing 7 characters sends one search request.
+
+### Practice exercises
+
+1. Open your browser's DevTools, and watch the **Network** tab while signing in and filtering tickets. Find the `Authorization` header.
+2. Change `minidesk_token` in DevTools under **Application > Local Storage** to something else, then click a link. Explain what happens.
+3. Stop the API while the app is open, then click around. Which messages appear?
+4. Remove `if (axios.isCancel(error)) return Promise.reject(error)` from `api.ts`. Quickly change filters, and watch for any problems. Then restore it.
+5. Add a "Mark as resolved" button to the ticket list. Which files need to change?
+6. In `backend/src/services/ticketService.ts`, remove the customer condition from `listTickets`, and sign in as Priya. Explain why hiding things in the frontend wouldn't have been enough. Then restore it.

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { setSessionExpiredHandler } from '../services/api'
 import * as authService from '../services/authService'
 import { userLoggedOut } from '../store/actions'
 import { useAppDispatch } from '../store/hooks'
@@ -13,6 +14,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRestoringSession, setIsRestoringSession] = useState(true)
   const dispatch = useAppDispatch()
 
+  // When any request finds the session has expired, sign out, and ProtectedRoute
+  // sends the user to the login page.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      setUser(null)
+      dispatch(userLoggedOut())
+    })
+    return () => setSessionExpiredHandler(null)
+  }, [dispatch])
+
   // On first load, check whether someone is already signed in, so a page refresh keeps them signed in.
   useEffect(() => {
     let isCancelled = false
@@ -21,6 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .getCurrentUser()
       .then((currentUser) => {
         if (!isCancelled) setUser(currentUser)
+      })
+      .catch(() => {
+        // If the server can't be reached, the login page shows. The token is kept,
+        // so a refresh signs the user back in once the server is available again.
       })
       .finally(() => {
         if (!isCancelled) setIsRestoringSession(false)

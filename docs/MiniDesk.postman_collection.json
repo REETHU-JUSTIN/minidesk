@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "MiniDesk API",
+    "description": "Run the requests in order, using Postman's Collection Runner. Requires the sample data from `npm run db:reset`. Each request has tests, which appear under Test Results.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "demoPassword", "value": "MiniDesk-Demo-2026" },
+    { "key": "adminToken", "value": "" },
+    { "key": "agentToken", "value": "" },
+    { "key": "customerToken", "value": "" },
+    { "key": "newTicketId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Sign in",
+      "item": [
+        {
+          "name": "Login as admin",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "const session = pm.response.json().data;",
+            "pm.test('Role is admin', () => pm.expect(session.user.role).to.eql('admin'));",
+            "pm.test('No password hash is returned', () => pm.expect(pm.response.text()).to.not.include('$2b$'));",
+            "pm.collectionVariables.set('adminToken', session.token);"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{ \"email\": \"admin@example.com\", \"password\": \"{{demoPassword}}\" }" } }
+        },
+        {
+          "name": "Login as agent",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('agentToken', pm.response.json().data.token);"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{ \"email\": \"sam@example.com\", \"password\": \"{{demoPassword}}\" }" } }
+        },
+        {
+          "name": "Login as customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('customerToken', pm.response.json().data.token);"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{ \"email\": \"priya@example.com\", \"password\": \"{{demoPassword}}\" }" } }
+        },
+        {
+          "name": "Login with a wrong password",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{ \"email\": \"admin@example.com\", \"password\": \"wrong-password\" }" } }
+        },
+        {
+          "name": "Get the current user",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('It is the customer', () => pm.expect(pm.response.json().data.email).to.eql('priya@example.com'));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/auth/me" }
+        }
+      ]
+    },
+    {
+      "name": "2. Tickets",
+      "item": [
+        {
+          "name": "List tickets as admin",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "const list = pm.response.json().data;",
+            "pm.test('Has pagination details', () => pm.expect(list).to.include.keys('items', 'page', 'totalPages', 'totalItems'));",
+            "pm.test('Respects the limit', () => pm.expect(list.items.length).to.be.at.most(5));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/tickets?limit=5&status=&sort=newest" }
+        },
+        {
+          "name": "Request tickets without signing in",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/tickets" }
+        },
+        {
+          "name": "Create a ticket as customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+            "const ticket = pm.response.json().data;",
+            "pm.test('Starts open and unassigned', () => { pm.expect(ticket.status).to.eql('open'); pm.expect(ticket.assignedAgentId).to.eql(null); });",
+            "pm.collectionVariables.set('newTicketId', ticket.id);"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets", "body": { "mode": "raw", "raw": "{ \"title\": \"Printer is on fire\", \"description\": \"Smoke is coming out of it.\", \"category\": \"technical\", \"priority\": \"high\" }" } }
+        },
+        {
+          "name": "Create a ticket with invalid data",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+            "pm.test('Reports the field', () => pm.expect(pm.response.json().error.details).to.have.property('title'));"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets", "body": { "mode": "raw", "raw": "{ \"title\": \"x\" }" } }
+        },
+        {
+          "name": "Read the new ticket",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('Includes the customer name', () => pm.expect(pm.response.json().data.customerName).to.eql('Priya Nair'));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}" }
+        },
+        {
+          "name": "Assign to self and update status as agent",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "const ticket = pm.response.json().data;",
+            "pm.test('Is updated', () => { pm.expect(ticket.status).to.eql('in_progress'); pm.expect(ticket.assignedAgentName).to.eql('Sam Carter'); });"
+          ] } }],
+          "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{agentToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}", "body": { "mode": "raw", "raw": "{ \"status\": \"in_progress\", \"assignedAgentId\": 2 }" } }
+        },
+        {
+          "name": "Try to change status as customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}", "body": { "mode": "raw", "raw": "{ \"status\": \"resolved\" }" } }
+        }
+      ]
+    },
+    {
+      "name": "3. Comments",
+      "item": [
+        {
+          "name": "Add a comment",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+            "pm.test('Author comes from the token', () => pm.expect(pm.response.json().data.authorName).to.eql('Priya Nair'));"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}/comments", "body": { "mode": "raw", "raw": "{ \"message\": \"Any update on this?\" }" } }
+        },
+        {
+          "name": "List comments",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has the comment', () => pm.expect(pm.response.json().data).to.have.lengthOf(1));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{agentToken}}" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}/comments" }
+        }
+      ]
+    },
+    {
+      "name": "4. Dashboard and users",
+      "item": [
+        {
+          "name": "Get dashboard stats",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('Counts are numbers', () => pm.expect(pm.response.json().data.total).to.be.a('number'));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/dashboard/stats" }
+        },
+        {
+          "name": "List agents as admin",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+            "const users = pm.response.json().data;",
+            "pm.test('Only agents', () => users.forEach((user) => pm.expect(user.role).to.eql('agent')));",
+            "pm.test('No password hashes', () => pm.expect(pm.response.text()).to.not.include('$2b$'));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/users?role=agent" }
+        },
+        {
+          "name": "Try to list users as customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/users" }
+        }
+      ]
+    },
+    {
+      "name": "5. Clean up",
+      "item": [
+        {
+          "name": "Try to delete as customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}" }
+        },
+        {
+          "name": "Delete the ticket as admin",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+          ] } }],
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}" }
+        },
+        {
+          "name": "Confirm the ticket is gone",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+          ] } }],
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}" }
+        }
+      ]
+    }
+  ]
+}

@@ -31,9 +31,10 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | [Authentication](interview/authentication.md) | Password hashing with bcrypt, JWT, role-based authorization |
 | [PostgreSQL and SQL](interview/postgresql.md) | Schema design, constraints, joins, aggregation, indexes, parameterized queries, connection pooling |
 | [API integration](interview/api-integration.md) | Axios and interceptors, how the frontend and backend work together |
+| [Testing](interview/testing.md) | Testing fundamentals, React Testing Library, mocking, API testing with Supertest |
 | [Rapid-fire review](interview/rapid-fire-questions.md) | 91 short questions for last-minute revision |
 
-Testing, Docker and deployment are added as we build them.
+Docker and deployment are added as we build them.
 
 ## How to use these notes
 
@@ -44,4 +45,4 @@ Testing, Docker and deployment are added as we build them.
 
 ## Be accurate about the project's current state
 
-An interviewer may look closely at your project, so describe it as it really is. The frontend, API and PostgreSQL database are connected and work together. Automated tests in the repository arrive in Phase 8, and the app isn't deployed yet, so don't claim either until then. These notes are updated whenever the code changes.
+An interviewer may look closely at your project, so describe it as it really is. The frontend, API and PostgreSQL database are connected and work together. It has an automated test suite, but it isn't deployed yet, so don't claim that it's live. These notes are updated whenever the code changes.

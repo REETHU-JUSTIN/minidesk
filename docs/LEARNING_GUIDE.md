@@ -914,3 +914,54 @@ The pages and Redux reducers didn't need to change, which is what the service la
 4. Remove `if (axios.isCancel(error)) return Promise.reject(error)` from `api.ts`. Quickly change filters, and watch for any problems. Then restore it.
 5. Add a "Mark as resolved" button to the ticket list. Which files need to change?
 6. In `backend/src/services/ticketService.ts`, remove the customer condition from `listTickets`, and sign in as Priya. Explain why hiding things in the frontend wouldn't have been enough. Then restore it.
+
+## Phase 8: Testing and debugging
+
+The full explanations are in the [Testing](interview/testing.md) guide.
+
+### Run the tests
+
+```bash
+cd frontend
+npm test              # 58 tests, no server needed
+
+cd ../backend
+npm test              # 110 tests, needs PostgreSQL and DB_PASSWORD in backend/.env
+```
+
+The backend tests create and use a separate database called `minidesk_test`, so your `minidesk` data isn't touched. Add `:watch` to re-run automatically as you edit, as in `npm run test:watch`.
+
+### What's covered
+
+| Your requirement | File |
+|---|---|
+| Login form | `frontend/src/pages/LoginPage.test.tsx` |
+| Ticket creation form | `frontend/src/components/tickets/TicketForm.test.tsx`, `pages/CreateTicketPage.test.tsx` |
+| Ticket list rendering, search and filtering | `frontend/src/pages/TicketListPage.test.tsx` |
+| API response handling | `frontend/src/services/api.test.ts` |
+| Authentication middleware | `backend/tests/authenticate.test.ts` |
+| Ticket CRUD endpoints | `backend/tests/tickets.test.ts` |
+| Beyond the list | Comments, route protection, Redux reducers, auth endpoints, validators, error handling |
+| Postman | `docs/MiniDesk.postman_collection.json` |
+
+### How the tests were checked
+
+- **Deliberate bugs:** 18 changes broke the code on purpose, such as removing token verification and permission checks. The tests caught all 18.
+- **Repeat runs:** both suites passed on several runs in a row, to check they aren't flaky.
+- **Safety:** the backend suite stayed on `minidesk_test`, even with `DB_NAME=minidesk` set in the shell.
+- **Postman:** the collection was run automatically with Newman, on a server with the real API and database.
+
+### Known gaps
+
+- No end-to-end tests are stored in the repository. The browser checks from Phase 7 were one-off scripts.
+- Page-level tests don't cover the Dashboard, Users or Ticket Details pages. The API behind them is tested, and the browser checks covered them once.
+- jsdom doesn't do real layout, so these tests can't catch visual bugs.
+
+### Practice exercises
+
+1. Run both suites, and read a test's name alongside its code.
+2. Break something yourself. Remove `authorize('admin')` from the delete route, run the tests and read the failure. Then restore it.
+3. Write a test that a customer can't delete their own ticket by calling the API with their token. Check whether one exists first.
+4. Add a test for `getInitials`, covering an empty name and a name with extra spaces.
+5. Write a component test for `StatusBadge`, checking the label for each status.
+6. Import the Postman collection and run it. Then change the password in a login request, and watch which tests fail.

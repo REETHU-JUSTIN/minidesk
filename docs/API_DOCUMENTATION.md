@@ -156,6 +156,12 @@ Admins only. `?role=agent` filters by role. Never includes password hashes.
 
 Public. Returns `{ "data": { "status": "ok" } }` when the server is running.
 
+## Postman collection
+
+Import [MiniDesk.postman_collection.json](MiniDesk.postman_collection.json) into Postman, then run it with the **Collection Runner**. Its 20 requests go through a whole ticket's life, with tests on each one. It signs in by itself and deletes the ticket it creates.
+
+Run `npm run db:reset` first, so the sample accounts exist.
+
 ## Try it
 
 The sample accounts use the password `MiniDesk-Demo-2026`, which is for local development only.

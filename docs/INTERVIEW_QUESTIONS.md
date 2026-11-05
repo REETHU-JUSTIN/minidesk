@@ -27,9 +27,11 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | [Context API](interview/context-api.md) | Context and the auth provider, choosing between local state, Context and Redux |
 | [Redux Toolkit](interview/redux-toolkit.md) | Store and slices, async thunks, reading and dispatching, race conditions |
 | [Frontend architecture](interview/frontend-architecture.md) | The service layer |
+| [Node.js and Express](interview/nodejs-express.md) | The event loop, REST and status codes, routes and layers, middleware, error handling, validation, environment variables and CORS |
+| [Authentication](interview/authentication.md) | Password hashing with bcrypt, JWT, role-based authorization |
 | [Rapid-fire review](interview/rapid-fire-questions.md) | 91 short questions for last-minute revision |
 
-Node.js, Express, PostgreSQL, JWT, testing, Docker and deployment are added as we build them.
+PostgreSQL, Axios, testing, Docker and deployment are added as we build them.
 
 ## How to use these notes
 
@@ -40,4 +42,4 @@ Node.js, Express, PostgreSQL, JWT, testing, Docker and deployment are added as w
 
 ## Be accurate about the project's current state
 
-An interviewer may look closely at your project, so describe it as it really is. Right now, the frontend runs on a temporary backend in the browser, which doesn't check passwords and resets on reload. Until Phase 7 connects the real API, don't say the app saves to a database. These notes are updated whenever the code changes.
+An interviewer may look closely at your project, so describe it as it really is. Right now, the frontend and API are separate and not yet connected. The frontend runs on a temporary backend in the browser, which doesn't check passwords. The API has real login and role checks, but stores data in memory until Phase 6. Don't say the app saves to a database until those phases are done. These notes are updated whenever the code changes.

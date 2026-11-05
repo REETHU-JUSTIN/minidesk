@@ -765,3 +765,60 @@ The same trick as Phase 3, with one more job. Searching from the top bar changes
 5. Install the Redux DevTools browser extension, then watch the pending and fulfilled actions as you filter tickets.
 6. Remove `.addCase(userLoggedOut, () => initialState)` from `ticketsSlice`. Sign in as Sam, open All Tickets, log out, sign in as Priya and watch closely when you open My Tickets. Restore it afterwards.
 7. Add a `/profile` route that only agents can open, showing their name. Then add it to the sidebar for agents only.
+
+## Phase 5: Node.js and Express backend
+
+The full explanations are in the [Node.js and Express](interview/nodejs-express.md) and [Authentication](interview/authentication.md) guides. Endpoints are listed in the [API documentation](API_DOCUMENTATION.md). This section shows how the pieces fit together.
+
+### What works now
+
+| Works now | What's still temporary |
+|---|---|
+| All API endpoints, for all three roles | Data is in memory and resets on restart, until Phase 6 |
+| Real login with bcrypt and JWT | The sample accounts share a password from `.env`, until Phase 6 |
+| Validation, role checks and error handling | The frontend isn't connected, until Phase 7 |
+
+### Folder map
+
+```
+backend/src/
+├── server.ts        Starts the server
+├── app.ts           Builds the app: middleware and routes
+├── config/env.ts    Loads and checks settings
+├── routes/          Which code handles which URL
+├── middleware/      Runs before controllers: login, roles, validation, errors
+├── controllers/     Reads the request, sends the response
+├── services/        Business rules and data
+├── types/           Data shapes
+└── utils/           AppError and validators
+```
+
+**Added beyond the original plan:** `backend/src/types/` for shared shapes and teaching Express about `req.user`, `services/devStore.ts` as temporary storage, and a `/api/health` endpoint for Docker later.
+
+### Follow one request all the way through
+
+Here's what happens when an agent changes a ticket's status with `PUT /api/tickets/1006`:
+
+1. **`server.ts`:** the server is already listening, and receives the request.
+2. **`app.ts`:** `cors` and `express.json()` run, so `req.body` is now an object.
+3. **`app.ts`:** the URL starts with `/api/tickets`, so `ticketRoutes` takes over.
+4. **`authenticate`:** verifies the token, loads the user and sets `req.user`.
+5. **`validateBody(validateUpdateTicket)`:** checks the status is allowed, and replaces `req.body` with clean data.
+6. **`ticketController.updateTicket`:** converts the ID to a number and calls the service.
+7. **`ticketService.updateTicket`:** finds the ticket, checks the rules and makes the change.
+8. **Back in the controller:** `res.json({ data: ticket })` sends the response.
+
+If any step fails, it creates an `AppError`, and everything else is skipped until `errorHandler`, which sends the error response.
+
+### How this phase was tested
+
+A script ran 120 checks against the running server, for every endpoint and role. That included attacks such as forged, expired and edited tokens, signing up as an admin, reading other customers' tickets, and broken JSON. It also scanned every response for password hashes and secrets. Phase 8 turns this kind of check into a permanent test suite.
+
+### Practice exercises
+
+1. Start the API with `npm run dev`. Follow the steps under "Try it" in the [API documentation](API_DOCUMENTATION.md).
+2. Copy a token into [jwt.io](https://jwt.io) to see what's inside it, using a sample account only. Notice that anyone can read it, but changing it breaks the signature.
+3. Add `console.log` lines to `authenticate`, `authorize` and a controller, then watch the order they run in.
+4. Move `app.use(errorHandler)` above the routes in `app.ts`. Trigger an error, and explain what happens. Then restore it.
+5. Remove `authorize('admin')` from the delete route, and try deleting as a customer. Then restore it.
+6. Add a `GET /api/tickets/:id/comments/count` endpoint, going through a route, a controller and a service. Then remove it.

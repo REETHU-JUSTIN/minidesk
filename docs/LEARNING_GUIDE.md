@@ -831,7 +831,7 @@ The full explanations are in the [PostgreSQL and SQL](interview/postgresql.md) g
 
 Temporary storage is gone, and all data now lives in PostgreSQL, so it survives restarts. The sample accounts now share the documented password `MiniDesk-Demo-2026`.
 
-Only the service files changed their logic. The routes and controllers didn't change at all, which is the benefit of separating layers.
+The SQL all went into the service files, with small updates to settings, startup and validation. The routes and controllers didn't change at all, which is the benefit of separating layers.
 
 | File | Purpose |
 |---|---|
@@ -859,7 +859,7 @@ Everything was tested on a temporary PostgreSQL server, separate from your real 
 - **Indexes:** `EXPLAIN` on 20,000 extra rows showed them in use.
 - **API:** all 120 earlier checks passed, plus 35 new ones covering SQL injection, data surviving a restart and simultaneous requests.
 
-Testing caught something the in-memory version couldn't: IDs too large for an `INTEGER` column, and text containing a null character, both of which PostgreSQL refuses. Without extra validation these would have caused 500 errors, so the validators now handle them.
+A real database also brings limits that in-memory data doesn't have. PostgreSQL refuses IDs too large for an `INTEGER` column and text containing a null character, which would cause 500 errors. The validators were updated to handle both, and the new checks confirm it.
 
 ### Practice exercises
 

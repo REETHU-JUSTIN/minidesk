@@ -212,7 +212,7 @@ export async function getTicket(user: PublicUser, ticketId: number): Promise<Tic
 
 ### 4. Why We Used It
 
-Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: the move from temporary in-memory data to PostgreSQL only changed services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
+Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: when I moved from temporary in-memory data to PostgreSQL, the queries all went into services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
 
 ### 5. Real-Time Scenario
 

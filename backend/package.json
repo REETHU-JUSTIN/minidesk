@@ -9,7 +9,10 @@
     "lint": "oxlint",
     "db:reset": "tsx src/scripts/resetDatabase.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:setup": "node dist/scripts/setupDatabase.js",
+    "user:create": "node dist/scripts/createUser.js",
+    "db:reset:built": "node dist/scripts/resetDatabase.js"
   },
   "license": "ISC",
   "description": "MiniDesk REST API",
@@ -18,6 +21,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.1"
   },

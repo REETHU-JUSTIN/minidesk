@@ -4,7 +4,7 @@ A full-stack support ticket management system, built with React, TypeScript, Nod
 
 Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role sees only what it's allowed to.
 
-**Current status: Phase 8 of 11.** The frontend, API and database work together, with 168 automated tests. Docker arrives in Phase 9.
+**Current status: Phase 9 of 11.** The frontend, API and database work together, with 171 automated tests. Docker files and a deployment guide are ready, but the Docker files haven't been run yet, and the app isn't deployed.
 
 ## Run the project
 
@@ -42,6 +42,10 @@ Open http://localhost:5173 and sign in with a sample account. All of them use th
 
 The API only accepts browser requests from `CLIENT_ORIGIN` in `backend/.env`. If Vite starts on a different port because 5173 is taken, update that setting or free the port.
 
+## Run with Docker (untested)
+
+Copy `.env.example` to `.env` in the project folder, fill it in, then run `docker compose up --build` and open http://localhost:8080. See the [deployment guide](docs/DEPLOYMENT_GUIDE.md) for details, including how to add sample data.
+
 ## Run the tests
 
 ```bash
@@ -75,6 +79,7 @@ cd backend && npm test     # needs PostgreSQL, and uses a separate minidesk_test
 | `jsonwebtoken` | Creates and verifies login tokens |
 | `bcrypt` | Hashes passwords |
 | `pg` | Connects to PostgreSQL |
+| `express-rate-limit` | Limits repeated failed logins |
 | `typescript`, `tsx` | Static types, and running TypeScript directly in development |
 | `vitest`, `supertest` | Running tests, and testing the API over HTTP |
 
@@ -99,5 +104,6 @@ cd backend && npm test     # needs PostgreSQL, and uses a separate minidesk_test
 
 - [API documentation](docs/API_DOCUMENTATION.md)
 - [Database guide](docs/DATABASE_GUIDE.md)
+- [Deployment guide](docs/DEPLOYMENT_GUIDE.md)
 - [Learning guide](docs/LEARNING_GUIDE.md)
 - [Interview guide](docs/INTERVIEW_QUESTIONS.md): every concept explained with code from this project

@@ -455,9 +455,14 @@ Opening a database connection is slow, because it involves a network handshake a
 **File:** [backend/src/config/db.ts](../../backend/src/config/db.ts)
 
 ```ts
-export const pool = new Pool({
-  host: env.dbHost,
+: { host: env.dbHost, port: env.dbPort, database: env.dbName, user: env.dbUser, password: env.dbPassword }),
 ```
+
+```ts
+export const pool = new Pool(connectionConfig)
+```
+
+- The settings come from either one hosted database address or separate local values. See [Docker and deployment](docker-deployment.md).
 
 ```ts
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (value) => new Date(value).toISOString())

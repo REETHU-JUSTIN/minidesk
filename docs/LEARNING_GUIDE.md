@@ -965,3 +965,43 @@ The backend tests create and use a separate database called `minidesk_test`, so 
 4. Add a test for `getInitials`, covering an empty name and a name with extra spaces.
 5. Write a component test for `StatusBadge`, checking the label for each status.
 6. Import the Postman collection and run it. Then change the password in a login request, and watch which tests fail.
+
+## Phase 9: Docker and deployment preparation
+
+The full explanations are in the [Docker and deployment](interview/docker-deployment.md) guide. The step-by-step instructions are in the [deployment guide](DEPLOYMENT_GUIDE.md).
+
+### What was added
+
+| File | Purpose |
+|---|---|
+| `backend/Dockerfile`, `frontend/Dockerfile` | Build container images |
+| `frontend/nginx.conf` | Serves the frontend, sending every page address to `index.html` |
+| `docker-compose.yml`, `.env.example` | Runs the database, API and frontend together |
+| `.dockerignore` | Keeps secrets and large folders out of images |
+| `frontend/vercel.json` | The same page-address fix, for Vercel |
+| `backend/src/middleware/rateLimits.ts` | Limits failed logins and sign-ups |
+| `backend/src/scripts/setupDatabase.ts` | Creates tables on a new database, and refuses if they exist |
+| `backend/src/scripts/createUser.ts` | Creates admin and agent accounts |
+| Changes in `env.ts`, `db.ts`, `app.ts`, `server.ts` | Hosted database addresses, encrypted connections, proxy trust and graceful shutdown |
+
+### Testing, and what's untested
+
+- **Docker:** the files have **not been run**, because Docker wasn't installed.
+- **Repeating Docker's steps:** in a clean copy of the project, the production install contained no development tools, the build worked, and the frontend had the production API address built in.
+- **The production server,** against an empty database:
+  - `db:setup` worked, and refused to run a second time.
+  - Sample data was refused.
+  - `user:create` made the first admin and an agent.
+  - The demo account didn't exist.
+  - CORS allowed only the configured site.
+- **Rate limiting:** a new test checks it, and fails if the limiter is removed. A test behind simulated proxy headers blocked one address without affecting another.
+- **Not tested:** graceful shutdown, because Windows doesn't send `SIGTERM` the way Linux does, and connecting to a real hosted database with `DB_SSL`.
+
+### Practice exercises
+
+1. Read `backend/Dockerfile` line by line, and explain why there are two `FROM` lines.
+2. Install Docker Desktop, then follow "Run everything on your computer" in the deployment guide. Tell me if anything fails, because these files are untested.
+3. Try signing in with a wrong password 11 times in a row, then read the response.
+4. Build the backend with `npm run build`, then run `npm run db:setup` against your `minidesk` database. Explain why it refuses.
+5. In `frontend/nginx.conf`, find the line that stops a page refresh from giving a 404.
+6. Write down every environment variable the API needs in production, and what happens if each is missing.

@@ -41,6 +41,7 @@ An error has an `error` field. `details` is included when specific fields are wr
 | 404 | Not found, or hidden from you | Another customer's ticket |
 | 409 | Conflicts with existing data | An email that's already registered |
 | 413 | The request body is too large | A body over 100 KB |
+| 429 | Too many attempts | Repeated failed logins from one address |
 | 500 | A bug on the server | Details are logged, and never sent to the client |
 
 ## Signing in
@@ -74,6 +75,8 @@ Returns `201` with `{ "data": { "token": "...", "user": { ... } } }`. Errors: `4
 Returns `200` with `{ "data": { "token": "...", "user": { ... } } }`. Errors: `400`, `401`.
 
 The same message is returned for an unknown email and a wrong password, so nobody can find out who has an account.
+
+After 10 failed attempts from one address within 15 minutes, login returns `429` until the 15 minutes are up. Successful logins don't count. Sign-up allows 10 attempts per address per hour. Both limits come from `LOGIN_ATTEMPT_LIMIT`.
 
 ### GET /api/auth/me
 

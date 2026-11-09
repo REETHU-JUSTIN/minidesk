@@ -13,6 +13,10 @@ export const app = express()
 // Stops the response from advertising which framework the server runs on.
 app.disable('x-powered-by')
 
+// Behind a hosting service's proxy, this lets Express read each visitor's real address.
+// Leaving it off locally stops anyone from faking their address with a header.
+if (env.trustProxy > 0) app.set('trust proxy', env.trustProxy)
+
 // Middleware runs in the order it's added, for every request.
 app.use(cors({ origin: env.clientOrigin })) // only our frontend may call this API from a browser
 app.use(express.json()) // turns a JSON request body into req.body

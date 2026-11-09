@@ -80,7 +80,7 @@ My queries list safe columns by name instead of using `SELECT *`, and login remo
 
 - **What's bcrypt's 72-byte limit?** It ignores anything past 72 bytes, so my validator rejects longer passwords.
 - **Why the same login error for both cases?** Different messages would reveal which emails are registered.
-- **What's missing from this login?** Rate limiting. It's something I'd add before production, to slow down password guessing.
+- **How do you slow down password guessing?** Login is rate limited: a few failed attempts per address in 15 minutes, then a 429 response. See [Docker and deployment](docker-deployment.md).
 
 ---
 

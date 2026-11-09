@@ -24,7 +24,7 @@ async function start() {
 ```
 
 ```ts
-app.listen(env.port, (error) => {
+const server = app.listen(env.port, (error) => {
 ```
 
 - `await` confirms the database is reachable before the server accepts requests.

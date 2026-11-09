@@ -1,0 +1,9 @@
+# Keeps these out of Docker builds: they're rebuilt inside the image, too large, or secret.
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+.git
+docs

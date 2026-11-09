@@ -14,6 +14,8 @@ export default defineConfig({
       DB_NAME: 'minidesk_test',
       JWT_SECRET: 'test-only-secret-that-is-at-least-32-characters-long',
       JWT_EXPIRES_IN: '1h',
+      // High, so ordinary tests are never blocked. rateLimit.test.ts sets its own low limit.
+      LOGIN_ATTEMPT_LIMIT: '1000',
     },
   },
 })

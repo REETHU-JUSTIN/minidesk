@@ -4,7 +4,7 @@ A full-stack support ticket management system, built with React, TypeScript, Nod
 
 Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role sees only what it's allowed to.
 
-**Current status: Phase 9 of 11.** The frontend, API and database work together, with 171 automated tests. Docker files and a deployment guide are ready, but the Docker files haven't been run yet, and the app isn't deployed.
+**Current status: Phase 10 of 11.** The application is complete and works from end to end, with 171 automated tests. It isn't deployed, and its Docker files haven't been run yet. See the [project overview](docs/PROJECT_OVERVIEW.md).
 
 ## Run the project
 
@@ -102,6 +102,8 @@ cd backend && npm test     # needs PostgreSQL, and uses a separate minidesk_test
 
 ## Documentation
 
+- [Project overview](docs/PROJECT_OVERVIEW.md)
+- [Folder structure](docs/FOLDER_STRUCTURE.md)
 - [API documentation](docs/API_DOCUMENTATION.md)
 - [Database guide](docs/DATABASE_GUIDE.md)
 - [Deployment guide](docs/DEPLOYMENT_GUIDE.md)

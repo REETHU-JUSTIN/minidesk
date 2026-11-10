@@ -1,6 +1,6 @@
 # Rapid-Fire Review Questions
 
-Short questions and answers for last-minute revision. For full explanations with code from the project, use the [interview guide index](../INTERVIEW_QUESTIONS.md).
+Short questions and answers for last-minute revision, covering Phases 1 to 4. For full explanations of every topic, including the backend, database, testing and deployment, use the [interview guide index](../INTERVIEW_QUESTIONS.md).
 
 ## Phase 1: Project setup and UI
 
@@ -19,7 +19,7 @@ Moving state to the closest shared parent of the components that need it. In Min
 Keys let React match items between renders, so it can update, move or remove the right ones. MiniDesk uses `ticket.id` because it's stable. Using the array index can attach the wrong state to the wrong row when a list is reordered or filtered.
 
 **5. What is derived state, and why avoid storing it?**
-It's a value that can be calculated from existing state or props. `TicketListPage` calculates `totalPages` and `ticketsOnPage` during render. Storing them separately would mean keeping two copies in sync, which is a common source of bugs.
+It's a value that can be calculated from existing state or props. `TicketList` calculates `hasActiveFilters` and `isFirstLoad` during render. Storing them separately would mean keeping several copies in sync, which is a common source of bugs.
 
 ### Hooks
 
@@ -35,8 +35,8 @@ Both keep a value between renders, but changing `ref.current` doesn't cause a re
 **9. In `Modal`, `onClose` is a dependency of the effect, and parents pass an inline arrow function. What happens?**
 An inline function is a new object on every parent render, so the effect's cleanup and setup run again each time the parent re-renders while the modal is open. That also calls `.focus()` again, which could pull focus away from something the user is typing in. `TicketDetails` avoids this by wrapping its handler in `useCallback`, because that page has other state that can change.
 
-**10. Why does `App.tsx` use `useState(getPageFromUrl)` rather than `useState(getPageFromUrl())`?**
-Passing the function means React calls it only on the first render. Calling it directly would run it on every render and discard the result. This is called lazy initialization.
+**10. What's the difference between `useState(calculate)` and `useState(calculate())`?**
+Passing the function means React calls it only on the first render. Calling it directly runs it on every render and throws the result away. This is called lazy initialization, and it's worth using when the starting value is expensive to work out.
 
 ### TypeScript
 
@@ -96,10 +96,10 @@ No. Types are erased, so the browser runs plain JavaScript. An API could return 
 `variant?: ButtonVariant` can be left out entirely. `assignedAgentId: number | null` must be present but can hold `null`. MiniDesk uses nullable for the agent because the field always exists on a ticket, and `null` clearly means nobody is assigned.
 
 **26. What is type narrowing?**
-TypeScript working out a more specific type from your checks. `find` returns `Ticket | undefined`. After `if (!ticket) return ...` in `TicketDetailsPage`, TypeScript knows `ticket` is a `Ticket`.
+TypeScript working out a more specific type from your checks. `find` returns `Ticket | undefined`. In `TicketDetailsLoader`, after the check that returns a spinner until the right ticket has loaded, `selectedTicket` can be passed as a `Ticket` rather than `Ticket | null`.
 
 **27. What are generics?**
-Types with a placeholder that's filled in when they're used. `paginate<T>(items: T[], ...)` works with any list and keeps the item type, so passing tickets returns `PaginatedResponse<Ticket>`. Using `any` instead would lose that checking.
+Types with a placeholder that's filled in when they're used. `useDebounce<T>` returns the same type it's given, and `PaginatedResponse<T>` describes paged results of any type, such as `PaginatedResponse<Ticket>`. Using `any` instead would lose that checking.
 
 **28. What's the difference between `any` and `unknown`?**
 `any` turns off checking for that value. `unknown` means "this could be anything", and TypeScript makes you check it before using it, so it's the safer choice for data from outside your app. MiniDesk's code doesn't use `any`.
@@ -119,7 +119,7 @@ The frontend should never receive a password or hash. Leaving it out documents t
 ### JavaScript
 
 **33. What's the difference between `==` and `===`?**
-`==` converts types before comparing, so `'1' == 1` is true. `===` compares without converting, so `'1' === 1` is false. MiniDesk uses `===` throughout, as in `item.id === PREVIEW_TICKET_ID`.
+`==` converts types before comparing, so `'1' == 1` is true. `===` compares without converting, so `'1' === 1` is false. MiniDesk uses `===` throughout, as in `ticket.id === updatedTicket.id`.
 
 **34. What's the difference between `let`, `const` and `var`?**
 `let` and `const` are block-scoped, and `const` can't be reassigned. `var` is function-scoped and has confusing hoisting behavior, so modern code avoids it. A `const` object's fields can still change; only the variable can't be pointed at something else.
@@ -131,7 +131,7 @@ The frontend should never receive a password or hash. Leaving it out documents t
 `dialogRef.current?.focus()` calls `focus` only if `current` isn't null or undefined. Otherwise, the whole expression gives `undefined` instead of crashing.
 
 **37. What's the difference between `map`, `filter`, `find` and `reduce`?**
-`map` transforms every item into a new array. `filter` keeps matching items in a new array. `find` returns the first match or `undefined`. `reduce` combines the items into one value. In `getDashboardStats`, `filter(...).length` counts tickets by status.
+`map` transforms every item into a new array. `filter` keeps matching items in a new array. `find` returns the first match or `undefined`. `reduce` combines the items into one value. The sidebar uses `filter` to show only the links for the user's role.
 
 **38. What do spread and rest do?**
 Both use `...`. Spread expands values, as in `{ ...dateOptions, hour: 'numeric' }`, which builds a new object. Rest collects them, as in `{ label, ...rest }`, which gathers the remaining props.
@@ -170,7 +170,7 @@ React keeps state when the same component type stays in the same position. `Tick
 ### Hooks
 
 **48. What are the Rules of Hooks, and why do they exist?**
-Call Hooks only at the top level of a component or custom hook, never inside conditions, loops or after an early return. React tracks Hooks by call order, so the order must be the same on every render. In MiniDesk, `TicketDetailsPage` returns early if the ticket is missing, so its Hooks live in a child component.
+Call Hooks only at the top level of a component or custom hook, never inside conditions, loops or after an early return. React tracks Hooks by call order, so the order must be the same on every render. In MiniDesk, `TicketDetailsLoader` returns early until the ticket has loaded, so the Hooks live in a child component, `TicketDetails`.
 
 **49. What's a custom hook, and when should you write one?**
 A function starting with `use` that calls other Hooks, used to share logic. MiniDesk's `useCloseOnOutside` exists because two menus need identical behavior. Each component that calls a custom hook gets its own separate state.
@@ -218,8 +218,8 @@ It's a custom `validate` function that compares the field with the other one, re
 **62. How do you close a dropdown when someone clicks outside it?**
 Listen for `mousedown` on the document and check whether the click landed inside the menu using `ref.current.contains(event.target)`. `useCloseOnOutside` does this and also handles Escape. It adds the listeners only while the menu is open, and removes them in the effect's cleanup.
 
-**63. Why does `listTickets` copy the array before sorting it?**
-`sort` changes the array it's called on. The spread in `[...filterTickets(...)].sort(...)` makes a copy, so shared data never gets reordered by accident. Newer JavaScript also offers `toSorted`, which returns a sorted copy.
+**63. Why are tickets filtered, sorted and paged in SQL rather than in JavaScript?**
+The database only sends back the rows needed for one page, and it can use indexes. Loading every ticket and filtering in JavaScript would get slower as the data grows. If you do sort in JavaScript, copy the array first, because `sort` changes the original. `toSorted` returns a sorted copy.
 
 **64. Why does the filter handler reset the page to 1?**
 You could be on page 2 when a filter leaves only 3 results, so page 2 would be empty. Resetting in the event handler is simpler than using an effect, and avoids an extra render.
@@ -259,7 +259,7 @@ A helper that wraps an async function and dispatches `pending`, `fulfilled` and 
 A dispatched thunk's promise always resolves, even on failure. `unwrap()` returns the result, or throws the error, so `try/catch` works. `CreateTicketPage` uses it to go to the new ticket after success, or show an error.
 
 **75. What is a race condition in data fetching, and how did you handle it?**
-Responses can arrive in a different order from their requests, so an older one can overwrite newer data. MiniDesk calls `request.abort()` in the effect's cleanup, and reducers ignore aborted requests. Tests that clicked Next and Previous quickly confirmed the list settles on the last request.
+Responses can arrive in a different order from their requests, so an older one can overwrite newer data. MiniDesk calls `request.abort()` in the effect's cleanup, and reducers ignore aborted requests. A browser test delayed an older request on purpose, and confirmed it was cancelled and couldn't overwrite the newer result.
 
 **76. Why does `Promise.all` suit the dashboard?**
 It runs the stats and recent tickets requests together rather than one after the other, so it's faster, and the thunk gets both results at once. If either fails, the whole thing rejects, which is why there's a single error state. `Promise.allSettled` is the alternative if partial results are useful.
@@ -267,7 +267,7 @@ It runs the stats and recent tickets requests together rather than one after the
 ### Routing
 
 **77. What's the difference between client-side and server-side routing?**
-With server-side routing, each URL loads a new page from the server. With client-side routing, JavaScript changes the URL and swaps components without reloading, so state is kept and navigation is fast. The server must return `index.html` for all these URLs, which matters at deployment in Phase 9.
+With server-side routing, each URL loads a new page from the server. With client-side routing, JavaScript changes the URL and swaps components without reloading, so state is kept and navigation is fast. The server must return `index.html` for all these URLs, which MiniDesk handles in `frontend/nginx.conf` and `frontend/vercel.json`.
 
 **78. What's a layout route, and what does `Outlet` do?**
 A route without a path that wraps its child routes. It renders `<Outlet />` where the matched child should appear. MiniDesk uses them for `AppLayout` and `ProtectedRoute`.

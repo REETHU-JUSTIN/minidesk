@@ -1,6 +1,12 @@
 # MiniDesk Learning Guide
 
-This guide grows with each phase. It explains what was built, why, and how the pieces connect.
+This guide follows the project phase by phase, explaining what was built, why, and how the pieces connect.
+
+**Read it as a history.** Each phase section describes the code as it was at that time. Later phases replaced some of it: for example, the temporary sample data and preview backend from Phases 1 to 4 were deleted in Phase 7. For how the code works **now**, use these instead:
+
+- [Project overview](PROJECT_OVERVIEW.md): what MiniDesk is and how it fits together
+- [Folder structure](FOLDER_STRUCTURE.md): what each file does
+- [Interview guide](INTERVIEW_QUESTIONS.md): every concept, with snippets checked against the current code
 
 ## Phase 1: Project setup and UI design
 

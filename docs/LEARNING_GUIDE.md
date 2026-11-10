@@ -1035,6 +1035,6 @@ The [examples folder](../examples/README.md) covers topics outside MiniDesk, eac
 1. Run `examples/postgresql/ctes.sql` on your `minidesk` database in pgAdmin, then change the date range in the recursive example.
 2. Write a CTE showing each customer's ticket count and their oldest unresolved ticket.
 3. Follow the Git walkthrough in a practice folder, and resolve the conflict a different way.
-4. Install MongoDB, or use a free Atlas database, and run both MongoDB scripts. Then add a `$match` stage counting only high-priority tickets.
+4. Run both MongoDB scripts. MongoDB is already installed on this computer, running as a Windows service, so `mongodb://localhost:27017` should work. The scripts only use a database called `minidesk_examples`. Then add a `$match` stage counting only high-priority tickets.
 5. Write three more user stories for features MiniDesk doesn't have, such as file attachments, with acceptance criteria and points.
 6. When you're ready for CI, copy `examples/ci-cd/ci.yml` to `.github/workflows/ci.yml`, push it, and watch the **Actions** tab.

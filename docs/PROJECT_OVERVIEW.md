@@ -96,7 +96,7 @@ The application is complete and works from end to end on a local machine.
 **Not done:**
 - **Deployment:** it isn't deployed, although a [deployment guide](DEPLOYMENT_GUIDE.md) is ready.
 - **Docker:** the Docker files have never been run, because Docker wasn't available.
-- **Phase 11:** the separate practice examples aren't written yet.
+- **Continuous integration:** a GitHub Actions workflow is written in `examples/ci-cd/`, but isn't turned on.
 
 **Known limitations:**
 - **Password reset:** "Forgot password" asks users to contact an admin, because no email service is set up.

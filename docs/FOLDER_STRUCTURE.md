@@ -10,6 +10,8 @@ Minidesk/
 ├── backend/               The Express API
 ├── database/              SQL for the tables and sample data
 ├── docs/                  Guides, API reference, interview notes, Postman collection
+├── examples/              Practice topics outside MiniDesk: MongoDB, PostgreSQL, Git,
+│                          CI/CD, Docker, AWS, Agile
 ├── docker-compose.yml     Runs the database, API and frontend together (untested)
 ├── .env.example           Settings needed by docker-compose.yml
 ├── .dockerignore          Keeps secrets and large folders out of Docker builds
@@ -133,6 +135,20 @@ docs/
 ├── INTERVIEW_QUESTIONS.md           Index of the interview notes
 ├── interview/                       One guide per technology, using real project code
 └── MiniDesk.postman_collection.json 20 API requests with automated checks
+```
+
+## Examples
+
+```
+examples/
+├── README.md                        What each example covers, and whether it was tested
+├── mongodb/                         crud.js, aggregation.js, package.json, README.md
+├── postgresql/                      ctes.sql, stored-procedures.sql, README.md
+├── git/README.md                    Branching, merge conflicts, pull requests
+├── ci-cd/                           ci.yml, a GitHub Actions workflow that isn't turned on, and README.md
+├── docker/README.md                 Docker commands and concepts
+├── aws/README.md                    How MiniDesk would run on AWS
+└── agile/README.md                  MiniDesk as user stories and sprints
 ```
 
 ## Where to look for common tasks

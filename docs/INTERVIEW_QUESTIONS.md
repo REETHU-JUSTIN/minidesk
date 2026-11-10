@@ -35,6 +35,20 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | [Docker and deployment](interview/docker-deployment.md) | Images and containers, Docker Compose, production configuration |
 | [Rapid-fire review](interview/rapid-fire-questions.md) | 91 short questions for last-minute revision |
 
+### Practice topics outside MiniDesk
+
+These are in the [examples folder](../examples/README.md), in the same format:
+
+| Guide | Concepts |
+|---|---|
+| [MongoDB](../examples/mongodb/README.md) | CRUD, aggregation pipelines |
+| [PostgreSQL](../examples/postgresql/README.md) | Common table expressions, functions, triggers, procedures |
+| [Git](../examples/git/README.md) | Branching and merging, pull requests |
+| [CI/CD](../examples/ci-cd/README.md) | Continuous integration with GitHub Actions |
+| [Docker](../examples/docker/README.md) | Images, containers, volumes, networks |
+| [AWS](../examples/aws/README.md) | Deploying a full-stack app on AWS |
+| [Agile and Scrum](../examples/agile/README.md) | User stories, sprints, Scrum roles and events |
+
 ## How to use these notes
 
 1. Open the code reference in your editor and read it there.

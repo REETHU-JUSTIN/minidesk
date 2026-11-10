@@ -1,0 +1,12 @@
+{
+  "name": "minidesk-mongodb-examples",
+  "private": true,
+  "description": "MongoDB CRUD and aggregation examples using MiniDesk-style data",
+  "scripts": {
+    "crud": "node crud.js",
+    "aggregation": "node aggregation.js"
+  },
+  "dependencies": {
+    "mongodb": "^6.0.0"
+  }
+}

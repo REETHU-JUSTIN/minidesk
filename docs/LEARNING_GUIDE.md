@@ -1011,3 +1011,30 @@ The full explanations are in the [Docker and deployment](interview/docker-deploy
 4. Build the backend with `npm run build`, then run `npm run db:setup` against your `minidesk` database. Explain why it refuses.
 5. In `frontend/nginx.conf`, find the line that stops a page refresh from giving a 404.
 6. Write down every environment variable the API needs in production, and what happens if each is missing.
+
+## Phase 10: Documentation
+
+Added the [project overview](PROJECT_OVERVIEW.md) and [folder structure](FOLDER_STRUCTURE.md), and updated older notes that described code which had since changed.
+
+## Phase 11: Practice examples
+
+The [examples folder](../examples/README.md) covers topics outside MiniDesk, each compared with how MiniDesk does things:
+
+| Example | Tested |
+|---|---|
+| MongoDB CRUD and aggregation | Yes, on a temporary MongoDB server |
+| PostgreSQL CTEs, functions, triggers and procedures | Yes, on a copy of the MiniDesk schema, which was left unchanged |
+| Git branching, merge conflicts and pull requests | Yes, in a throwaway repository |
+| A CI workflow for MiniDesk | Every command ran on a clean copy. Not turned on in GitHub |
+| Docker fundamentals | No, Docker isn't installed |
+| AWS deployment | No, it's a written plan |
+| Agile and Scrum | Not applicable. MiniDesk's features as user stories and sprints |
+
+### Practice exercises
+
+1. Run `examples/postgresql/ctes.sql` on your `minidesk` database in pgAdmin, then change the date range in the recursive example.
+2. Write a CTE showing each customer's ticket count and their oldest unresolved ticket.
+3. Follow the Git walkthrough in a practice folder, and resolve the conflict a different way.
+4. Install MongoDB, or use a free Atlas database, and run both MongoDB scripts. Then add a `$match` stage counting only high-priority tickets.
+5. Write three more user stories for features MiniDesk doesn't have, such as file attachments, with acceptance criteria and points.
+6. When you're ready for CI, copy `examples/ci-cd/ci.yml` to `.github/workflows/ci.yml`, push it, and watch the **Actions** tab.

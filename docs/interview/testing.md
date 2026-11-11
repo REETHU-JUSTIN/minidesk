@@ -26,7 +26,7 @@ Most tests follow three steps: **Arrange** the setup, **Act** by doing the thing
 | Supertest | API integration | `backend/tests/` |
 | Postman | Manual and scripted API checks | `docs/MiniDesk.postman_collection.json` |
 
-The repository has 168 automated tests: 58 frontend and 110 backend. There's no end-to-end suite in the repository. I checked the full stack with one-off browser scripts during development.
+The repository has 176 automated tests: 62 frontend and 114 backend. There's no end-to-end suite in the repository. I checked the full stack with one-off browser scripts during development.
 
 ### 3. Code Reference
 
@@ -73,13 +73,13 @@ A developer refactors the ticket query and accidentally removes the customer fil
 Unit tests check one function, integration tests check parts working together, and end-to-end tests drive the real app. My validators have unit tests, and my API tests are integration tests that go through Express to a real database.
 
 **What is the test pyramid?**
-Many fast unit tests, fewer integration tests, and a few slow end-to-end tests. Mine leans toward integration on the backend, because the riskiest logic, such as permissions in SQL, only proves itself against a real database.
+Many fast unit tests, fewer integration tests, and a few slow end-to-end tests. Mine leans toward integration on the backend, because the riskiest logic, such as permissions in queries, only proves itself against a real database.
 
 **What does coverage tell you?**
 Which lines ran, not whether the results were checked. A test can run a line and assert nothing, so coverage can look good while tests prove little.
 
 **How did you test your project?**
-With Vitest across both apps, React Testing Library for components, and Supertest for the API against a real PostgreSQL test database. I also have a Postman collection.
+With Vitest across both apps, React Testing Library for components, and Supertest for the API against a temporary MongoDB server. I also have a Postman collection.
 
 **How do you know they work?**
 I broke the code on purpose in 18 ways, such as removing permission checks and token verification, and the tests caught all 18. A test that can't fail is worthless, so this mattered to me.
@@ -219,7 +219,7 @@ api.defaults.adapter = async (config) => {
 **File:** [backend/tests/errors.test.ts](../../backend/tests/errors.test.ts)
 
 ```ts
-vi.spyOn(pool, 'query').mockImplementation(() => {
+vi.spyOn(Ticket, 'countDocuments').mockImplementation(() => {
   throw new Error('secret database detail')
 })
 ```
@@ -228,7 +228,7 @@ vi.spyOn(pool, 'query').mockImplementation(() => {
 
 ### 4. Why We Used It
 
-Component tests shouldn't need a running server. But my backend's riskiest logic is its SQL and permissions, and mocking the database would test nothing useful there, so those tests use a real one.
+Component tests shouldn't need a running server. But my backend's riskiest logic is its queries and permissions, and mocking the database would test nothing useful there, so those tests use a real MongoDB server.
 
 ### 5. Real-Time Scenario
 
@@ -247,13 +247,13 @@ To test what users see when the server is down, the test makes `getTickets` reje
 Replacing a dependency with a controllable fake, to isolate what's being tested and make hard-to-create situations easy.
 
 **Mock versus spy?**
-A spy watches a real function, and can optionally replace its behavior. A mock replaces it entirely. I use `vi.mock` for services and `vi.spyOn` on `pool.query`.
+A spy watches a real function, and can optionally replace its behavior. A mock replaces it entirely. I use `vi.mock` for services and `vi.spyOn` on a Mongoose model.
 
 **What are the risks?**
 Tests can pass while the real parts don't work together, for example if the fake returns a different shape from the real API. So I use real components where the risk is highest.
 
 **What did you mock, and what didn't you?**
-On the frontend, I mocked services and Axios's adapter. On the backend, I used a real PostgreSQL database, because mocking SQL wouldn't prove the queries or permissions work.
+On the frontend, I mocked services and Axios's adapter. On the backend, I used a real temporary MongoDB server, because mocking the database wouldn't prove the queries or permissions work.
 
 ### 8. Follow-up Questions
 
@@ -273,31 +273,35 @@ Tests need known starting data, and must never touch real data, so a separate te
 
 ### 2. Project Implementation
 
-- **`vitest.config.mts`:** forces `DB_NAME` to `minidesk_test`.
-- **`tests/globalSetup.ts`:** creates that database.
+- **`tests/globalSetup.ts`:** starts a temporary MongoDB server, with a database called `minidesk_test`.
+- **`vitest.config.mts`:** sets the test environment, and runs files one at a time.
 - **`tests/helpers.ts`:** resets the data and logs users in.
 - **`tests/*.test.ts`:** cover auth, the middleware, CRUD, roles and errors.
 
 ### 3. Code Reference
 
-**File:** [backend/vitest.config.mts](../../backend/vitest.config.mts)
+**File:** [backend/tests/globalSetup.ts](../../backend/tests/globalSetup.ts)
 
 ```ts
-DB_NAME: 'minidesk_test',
+server = await MongoMemoryServer.create()
+process.env.MONGODB_URI = server.getUri('minidesk_test')
 ```
+
+- Each run gets its own throwaway server, which takes priority over `backend/.env`.
+
+**File:** [backend/vitest.config.mts](../../backend/vitest.config.mts)
 
 ```ts
 fileParallelism: false,
 ```
 
-- This setting takes priority over `backend/.env`. I also confirmed it overrides a `DB_NAME` set in the shell.
 - Files run one at a time, because they share one database.
 
 **File:** [backend/tests/helpers.ts](../../backend/tests/helpers.ts)
 
 ```ts
-if (!env.dbName.endsWith('_test')) {
-  throw new Error(`Refusing to reset "${env.dbName}". Tests may only use a database ending in _test.`)
+if (!mongoose.connection.name.endsWith('_test')) {
+  throw new Error(`Refusing to reset "${mongoose.connection.name}". Tests may only use a database ending in _test.`)
 }
 ```
 
@@ -306,8 +310,8 @@ if (!env.dbName.endsWith('_test')) {
 **File:** [backend/tests/tickets.test.ts](../../backend/tests/tickets.test.ts)
 
 ```ts
-const other = await api.get('/api/tickets/1006').set(asUser(liam))
-const missing = await api.get('/api/tickets/99999').set(asUser(liam))
+const other = await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(liam))
+const missing = await api.get(`/api/tickets/${ticket(99999)}`).set(asUser(liam))
 
 expect(other.status).toBe(404)
 expect(other.body).toEqual(missing.body)
@@ -325,7 +329,7 @@ it('accepts a correctly signed token, which proves the tests below fail for the 
 
 ### 4. Why We Used It
 
-Security rules are the most important thing to test, and they run through middleware and SQL together. A real database also catches things a mock can't, such as constraint errors and bad SQL.
+Security rules are the most important thing to test, and they run through middleware and database queries together. A real database also catches things a mock can't, such as a duplicate-email error or a query that matches nothing.
 
 ### 5. Real-Time Scenario
 
@@ -343,19 +347,19 @@ Before each test, the data resets to the same sample tickets. A test signs in as
 ### 7. Project-Based Answers
 
 **Real database or mock?**
-A real one for me, because my rules live partly in SQL. It's slower, but it catches real problems. The suite still runs in about 10 seconds.
+A real one for me, because my rules live partly in queries. A temporary in-memory MongoDB gives that without needing an installed server. The suite still runs in about 10 seconds.
 
 **How do you keep tests independent?**
 `beforeEach` resets the tables and sample data, so each test starts the same way.
 
 **How did you test your endpoints?**
-With Supertest. Each endpoint is tested for success, validation errors and each role's permissions. I also test edge cases, such as five sign-ups at once with the same email, and SQL injection attempts.
+With Supertest. Each endpoint is tested for success, validation errors and each role's permissions. I also test edge cases, such as five sign-ups at once with the same email, and query injection attempts.
 
 **How did you test the middleware?**
 With no token, a garbage token, an expired token, the wrong secret, the `none` algorithm, an edited payload, and a user who doesn't exist. A correctly signed token is the control, which proves the failures are for the right reasons. Another test confirms that every protected route requires a login.
 
 **How do you protect real data?**
-The test config forces the database name to `minidesk_test`, and the reset function refuses to run on any name not ending in `_test`.
+Tests start their own temporary MongoDB server, so real data is never reachable. The reset function also refuses to run on any database not ending in `_test`.
 
 **How do you use Postman?**
 A collection with 20 requests that goes through a full ticket lifecycle, with test scripts that check each response and pass tokens along. It's useful for exploring the API by hand, and can run automatically with Newman.
@@ -363,5 +367,6 @@ A collection with 20 requests that goes through a full ticket lifecycle, with te
 ### 8. Follow-up Questions
 
 - **Why do your tests go one file at a time?** They share a database. Separate databases per worker would allow parallel runs, but aren't needed at this speed.
+- **Why a temporary server, rather than your local MongoDB?** Tests need no installed database, CI works without extra setup, and real data can't be touched.
 - **Why is the JWT secret in the test config?** It's only for tests, and it protects nothing real.
 - **What did Postman catch?** A bug in my own collection: scripts declaring a variable named `data`, which is reserved in Postman's sandbox. It was a reminder that test tools need testing too.

@@ -218,7 +218,7 @@ It's a custom `validate` function that compares the field with the other one, re
 **62. How do you close a dropdown when someone clicks outside it?**
 Listen for `mousedown` on the document and check whether the click landed inside the menu using `ref.current.contains(event.target)`. `useCloseOnOutside` does this and also handles Escape. It adds the listeners only while the menu is open, and removes them in the effect's cleanup.
 
-**63. Why are tickets filtered, sorted and paged in SQL rather than in JavaScript?**
+**63. Why are tickets filtered, sorted and paged in the database rather than in JavaScript?**
 The database only sends back the rows needed for one page, and it can use indexes. Loading every ticket and filtering in JavaScript would get slower as the data grows. If you do sort in JavaScript, copy the array first, because `sort` changes the original. `toSorted` returns a sorted copy.
 
 **64. Why does the filter handler reset the page to 1?**
@@ -291,7 +291,7 @@ It swaps the current history entry rather than adding one. Without it, pressing 
 `<a>` makes the browser load a new page, which resets all React state. `Link` updates the URL through the History API with no reload. `NavLink` also knows if it's active.
 
 **85. Why is the ticket ID checked in `TicketDetailsPage`?**
-`useParams` always returns text, and users can type anything into a URL. `Number('abc')` gives `NaN`, so the code checks for a positive whole number before requesting anything.
+Users can type anything into a URL, so the code checks that the ID looks like a MongoDB ObjectId before requesting anything.
 
 ### Context
 

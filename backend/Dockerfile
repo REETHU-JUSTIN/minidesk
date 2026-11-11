@@ -1,10 +1,12 @@
 # Builds the MiniDesk API into a container image.
-# Build from the project root, so the database folder can be copied in:
+# Build from the project root:
 #   docker build -f backend/Dockerfile -t minidesk-api .
 
 # Stage 1: compile TypeScript. This stage needs development tools.
 FROM node:22-bookworm-slim AS build
 WORKDIR /app/backend
+# The temporary test database isn't needed in an image, so skip downloading it.
+ENV MONGOMS_DISABLE_POSTINSTALL=1
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci
 COPY backend/ ./
@@ -18,8 +20,6 @@ WORKDIR /app/backend
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/backend/dist ./dist
-# The SQL files, for npm run db:setup
-COPY database /app/database
 
 # Run as an ordinary user rather than root, to limit the damage if the app were compromised.
 USER node

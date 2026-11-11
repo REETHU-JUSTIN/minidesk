@@ -4,6 +4,7 @@ import { env } from '../config/env'
 import { getUserById } from '../services/authService'
 import type { PublicUser } from '../types'
 import { AppError } from '../utils/AppError'
+import { isValidId } from '../utils/validators'
 
 // Answers "who is making this request?". Every protected route runs this first.
 export const authenticate: RequestHandler = async (req, _res, next) => {
@@ -15,19 +16,19 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
     return
   }
 
-  let userId: number
+  let userId: string | undefined
   try {
     // verify checks the signature and expiry, and throws if either is wrong.
     // Allowing only HS256 stops an attacker from choosing a weaker algorithm.
     const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
-    userId = Number(payload.sub)
+    userId = typeof payload === 'string' ? undefined : payload.sub
   } catch {
     next(new AppError(401, 'Your session has expired. Please sign in again.'))
     return
   }
 
   // Load the user each time, so a deleted user or changed role takes effect immediately.
-  const user = Number.isInteger(userId) ? await getUserById(userId) : null
+  const user = isValidId(userId) ? await getUserById(userId) : null
   if (!user) {
     next(new AppError(401, 'Your session has expired. Please sign in again.'))
     return

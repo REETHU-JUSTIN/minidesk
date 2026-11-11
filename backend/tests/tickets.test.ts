@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { api, closeDatabase, resetData, tokenFor } from './helpers'
+import { api, closeDatabase, resetData, ticket, tokenFor, user } from './helpers'
 
 let admin: string
 let agent: string // Sam
@@ -17,8 +17,9 @@ afterAll(closeDatabase)
 
 const asUser = (token: string) => ({ Authorization: `Bearer ${token}` })
 const list = (token: string, query = '') => api.get(`/api/tickets${query}`).set(asUser(token))
-const ids = (response: { body: { data: { items: { id: number }[] } } }) => response.body.data.items.map((ticket) => ticket.id)
-const update = (token: string, id: number, changes: object) => api.put(`/api/tickets/${id}`).set(asUser(token)).send(changes)
+// The sample IDs end in the ticket number, which keeps these tests easy to read.
+const ids = (response: { body: { data: { items: { id: string }[] } } }) => response.body.data.items.map((item) => Number(item.id.slice(-4)))
+const update = (token: string, number: number, changes: object) => api.put(`/api/tickets/${ticket(number)}`).set(asUser(token)).send(changes)
 
 const newTicket = { title: 'Printer is on fire', description: 'Smoke is coming out of it.', category: 'technical', priority: 'high' }
 
@@ -34,7 +35,7 @@ describe('GET /api/tickets', () => {
   it('includes tickets with no agent', async () => {
     const response = await list(admin, '?search=password')
 
-    expect(response.body.data.items[0]).toMatchObject({ id: 1007, assignedAgentId: null, assignedAgentName: null })
+    expect(response.body.data.items[0]).toMatchObject({ id: ticket(1007), assignedAgentId: null, assignedAgentName: null })
   })
 
   it('paginates, covering each ticket exactly once', async () => {
@@ -62,8 +63,8 @@ describe('GET /api/tickets', () => {
     expect(ids(await list(admin, '?status=open&priority=high'))).toEqual([1008])
   })
 
-  it('treats SQL and wildcards in a search as plain text', async () => {
-    for (const search of ["' OR 1=1 --", "'; DROP TABLE users; --", '%', '_']) {
+  it('treats regular expressions and query syntax in a search as plain text', async () => {
+    for (const search of ["' OR 1=1 --", '.*', '^', '(', '[a-z]', '$where', '{"$ne":""}']) {
       const response = await list(admin, `?search=${encodeURIComponent(search)}`)
       expect(response.status).toBe(200)
       expect(response.body.data.totalItems).toBe(0)
@@ -87,15 +88,15 @@ describe('GET /api/tickets', () => {
 
 describe('GET /api/tickets/:id', () => {
   it('returns a ticket to its owner', async () => {
-    const response = await api.get('/api/tickets/1006').set(asUser(priya))
+    const response = await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(priya))
 
     expect(response.status).toBe(200)
     expect(response.body.data.title).toBe('App crashes when uploading a file')
   })
 
   it('makes another customer\'s ticket look the same as a missing one', async () => {
-    const other = await api.get('/api/tickets/1006').set(asUser(liam))
-    const missing = await api.get('/api/tickets/99999').set(asUser(liam))
+    const other = await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(liam))
+    const missing = await api.get(`/api/tickets/${ticket(99999)}`).set(asUser(liam))
 
     expect(other.status).toBe(404)
     expect(other.body).toEqual(missing.body)
@@ -111,13 +112,13 @@ describe('POST /api/tickets', () => {
     const response = await api.post('/api/tickets').set(asUser(priya)).send({ ...newTicket, title: '  Printer is on fire ' })
 
     expect(response.status).toBe(201)
-    expect(response.body.data).toMatchObject({ id: 1009, title: 'Printer is on fire', status: 'open', customerId: 4, assignedAgentId: null })
+    expect(response.body.data).toMatchObject({ title: 'Printer is on fire', status: 'open', customerId: user(4), assignedAgentId: null })
   })
 
   it('ignores fields a customer must not set', async () => {
     const response = await api.post('/api/tickets').set(asUser(priya)).send({ ...newTicket, status: 'resolved', customerId: 1, assignedAgentId: 2 })
 
-    expect(response.body.data).toMatchObject({ status: 'open', customerId: 4, assignedAgentId: null })
+    expect(response.body.data).toMatchObject({ status: 'open', customerId: user(4), assignedAgentId: null })
   })
 
   it('does not let agents or admins create tickets', async () => {
@@ -135,7 +136,7 @@ describe('POST /api/tickets', () => {
 
 describe('PUT /api/tickets/:id', () => {
   it('changes only the fields that were sent, and moves updatedAt', async () => {
-    const before = (await api.get('/api/tickets/1007').set(asUser(admin))).body.data
+    const before = (await api.get(`/api/tickets/${ticket(1007)}`).set(asUser(admin))).body.data
 
     const response = await update(admin, 1007, { status: 'in_progress' })
 
@@ -160,7 +161,7 @@ describe('PUT /api/tickets/:id', () => {
 
     it('cannot change the status or the agent', async () => {
       expect((await update(priya, 1008, { status: 'resolved' })).status).toBe(403)
-      expect((await update(priya, 1008, { assignedAgentId: 2 })).status).toBe(403)
+      expect((await update(priya, 1008, { assignedAgentId: user(2) })).status).toBe(403)
     })
 
     it('cannot edit a ticket that is no longer open', async () => {
@@ -178,8 +179,8 @@ describe('PUT /api/tickets/:id', () => {
     })
 
     it('can assign a ticket to themselves only', async () => {
-      expect((await update(agent, 1007, { assignedAgentId: 2 })).body.data.assignedAgentName).toBe('Sam Carter')
-      expect((await update(agent, 1007, { assignedAgentId: 3 })).status).toBe(403)
+      expect((await update(agent, 1007, { assignedAgentId: user(2) })).body.data.assignedAgentName).toBe('Sam Carter')
+      expect((await update(agent, 1007, { assignedAgentId: user(3) })).status).toBe(403)
       expect((await update(agent, 1007, { assignedAgentId: null })).status).toBe(403)
     })
 
@@ -190,59 +191,59 @@ describe('PUT /api/tickets/:id', () => {
 
   describe('as an admin', () => {
     it('can assign any agent, and unassign', async () => {
-      expect((await update(admin, 1007, { assignedAgentId: 3 })).body.data.assignedAgentName).toBe('Maya Lee')
+      expect((await update(admin, 1007, { assignedAgentId: user(3) })).body.data.assignedAgentName).toBe('Maya Lee')
       expect((await update(admin, 1007, { assignedAgentId: null })).body.data.assignedAgentName).toBeNull()
     })
 
     it('cannot assign someone who is not an agent', async () => {
-      expect((await update(admin, 1007, { assignedAgentId: 4 })).status).toBe(400)
+      expect((await update(admin, 1007, { assignedAgentId: user(4) })).status).toBe(400)
     })
   })
 })
 
 describe('DELETE /api/tickets/:id', () => {
   it('lets an admin delete a ticket, along with its comments', async () => {
-    const response = await api.delete('/api/tickets/1006').set(asUser(admin))
+    const response = await api.delete(`/api/tickets/${ticket(1006)}`).set(asUser(admin))
 
     expect(response.status).toBe(204)
     expect(response.text).toBe('')
-    expect((await api.get('/api/tickets/1006').set(asUser(admin))).status).toBe(404)
-    expect((await api.get('/api/tickets/1006/comments').set(asUser(admin))).status).toBe(404)
+    expect((await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(admin))).status).toBe(404)
+    expect((await api.get(`/api/tickets/${ticket(1006)}/comments`).set(asUser(admin))).status).toBe(404)
   })
 
   it('does not let customers or agents delete', async () => {
-    expect((await api.delete('/api/tickets/1006').set(asUser(priya))).status).toBe(403)
-    expect((await api.delete('/api/tickets/1006').set(asUser(agent))).status).toBe(403)
-    expect((await api.get('/api/tickets/1006').set(asUser(admin))).status).toBe(200)
+    expect((await api.delete(`/api/tickets/${ticket(1006)}`).set(asUser(priya))).status).toBe(403)
+    expect((await api.delete(`/api/tickets/${ticket(1006)}`).set(asUser(agent))).status).toBe(403)
+    expect((await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(admin))).status).toBe(200)
   })
 
   it('returns 404 for a ticket that does not exist', async () => {
-    expect((await api.delete('/api/tickets/99999').set(asUser(admin))).status).toBe(404)
+    expect((await api.delete(`/api/tickets/${ticket(99999)}`).set(asUser(admin))).status).toBe(404)
   })
 })
 
 describe('comments', () => {
   it('lists a ticket\'s comments in order, with authors', async () => {
-    const response = await api.get('/api/tickets/1006/comments').set(asUser(priya))
+    const response = await api.get(`/api/tickets/${ticket(1006)}/comments`).set(asUser(priya))
 
     expect(response.status).toBe(200)
     expect(response.body.data.map((comment: { authorName: string }) => comment.authorName)).toEqual(['Priya Nair', 'Maya Lee'])
   })
 
   it('takes the author from the token, not the request', async () => {
-    const response = await api.post('/api/tickets/1006/comments').set(asUser(agent)).send({ message: ' On it. ', userId: 1, authorName: 'Fake' })
+    const response = await api.post(`/api/tickets/${ticket(1006)}/comments`).set(asUser(agent)).send({ message: ' On it. ', userId: 1, authorName: 'Fake' })
 
     expect(response.status).toBe(201)
-    expect(response.body.data).toMatchObject({ message: 'On it.', userId: 2, authorName: 'Sam Carter' })
+    expect(response.body.data).toMatchObject({ message: 'On it.', userId: user(2), authorName: 'Sam Carter' })
   })
 
   it('rejects an empty comment', async () => {
-    expect((await api.post('/api/tickets/1006/comments').set(asUser(priya)).send({ message: '   ' })).status).toBe(400)
+    expect((await api.post(`/api/tickets/${ticket(1006)}/comments`).set(asUser(priya)).send({ message: '   ' })).status).toBe(400)
   })
 
   it('hides another customer\'s comments, and blocks commenting there', async () => {
-    expect((await api.get('/api/tickets/1006/comments').set(asUser(liam))).status).toBe(404)
-    expect((await api.post('/api/tickets/1006/comments').set(asUser(liam)).send({ message: 'Hello' })).status).toBe(404)
+    expect((await api.get(`/api/tickets/${ticket(1006)}/comments`).set(asUser(liam))).status).toBe(404)
+    expect((await api.post(`/api/tickets/${ticket(1006)}/comments`).set(asUser(liam)).send({ message: 'Hello' })).status).toBe(404)
   })
 })
 

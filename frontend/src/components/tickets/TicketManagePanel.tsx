@@ -10,7 +10,7 @@ interface TicketManagePanelProps {
   agents: User[]
   isSaving: boolean
   onStatusChange: (status: TicketStatus) => void
-  onAgentChange: (agentId: number | null) => void
+  onAgentChange: (agentId: string | null) => void
   onDeleteClick: () => void
 }
 
@@ -44,7 +44,7 @@ export function TicketManagePanel({ ticket, currentUser, agents, isSaving, onSta
             label="Assigned agent"
             value={ticket.assignedAgentId ?? ''}
             disabled={isSaving}
-            onChange={(event) => onAgentChange(event.target.value === '' ? null : Number(event.target.value))}
+            onChange={(event) => onAgentChange(event.target.value === '' ? null : event.target.value)}
           >
             <option value="">Unassigned</option>
             {agents.map((agent) => (

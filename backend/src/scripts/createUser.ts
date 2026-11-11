@@ -8,7 +8,8 @@
 // saved in your shell history along with the other options.
 import { parseArgs } from 'node:util'
 import bcrypt from 'bcrypt'
-import { pool } from '../config/db'
+import { connectDatabase, disconnectDatabase } from '../config/db'
+import { User } from '../models/User'
 import type { UserRole } from '../types'
 import { validateRegister } from '../utils/validators'
 
@@ -32,10 +33,12 @@ async function main() {
   const { name, email, password } = result.data
   const passwordHash = await bcrypt.hash(password, 10)
 
+  await connectDatabase()
+  await User.init() // the unique email index must exist before checking for duplicates
   try {
-    await pool.query('INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)', [name, email, passwordHash, role])
+    await User.create({ name, email, passwordHash, role })
   } catch (error) {
-    if ((error as { code?: string }).code === '23505') throw new Error('An account with this email already exists.')
+    if ((error as { code?: number }).code === 11000) throw new Error('An account with this email already exists.')
     throw error
   }
   console.log(`Created ${role} account for ${email}.`)
@@ -46,4 +49,4 @@ main()
     console.error('Could not create the user:', error.message)
     process.exitCode = 1
   })
-  .finally(() => pool.end())
+  .finally(() => disconnectDatabase())

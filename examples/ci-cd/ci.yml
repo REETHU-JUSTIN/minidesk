@@ -33,27 +33,7 @@ jobs:
     defaults:
       run:
         working-directory: backend
-    # A real PostgreSQL server for the API tests, thrown away when the job ends.
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: ci-only-password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: postgres
-      # Only used by this temporary server, so it isn't a real secret.
-      DB_PASSWORD: ci-only-password
-      # Required for the server to start. The tests set their own value.
-      JWT_SECRET: ci-only-secret-that-is-at-least-32-characters
+    # The API tests start their own temporary MongoDB server, so no database is needed here.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

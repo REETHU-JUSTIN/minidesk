@@ -1,7 +1,8 @@
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { pool } from '../src/config/db'
-import { api, closeDatabase, tokenFor } from './helpers'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { Ticket } from '../src/models/Ticket'
+import { api, closeDatabase, resetData, tokenFor } from './helpers'
 
+beforeAll(resetData)
 afterEach(() => vi.restoreAllMocks())
 afterAll(closeDatabase)
 
@@ -35,7 +36,7 @@ describe('error handling', () => {
   it('hides the details of an unexpected error, and logs them on the server', async () => {
     const token = await tokenFor('admin@example.com')
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.spyOn(pool, 'query').mockImplementation(() => {
+    vi.spyOn(Ticket, 'countDocuments').mockImplementation(() => {
       throw new Error('secret database detail')
     })
 

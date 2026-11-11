@@ -1,10 +1,18 @@
 # PostgreSQL: CTEs and Stored Procedures
 
-**Tested:** both files ran correctly on a copy of the MiniDesk schema. They left the data unchanged, and ran again cleanly. MiniDesk itself doesn't use stored procedures.
+**Tested:** both files ran correctly on a copy of the schema here. They left the data unchanged, and ran again cleanly.
+
+MiniDesk now uses MongoDB, but it was first built on PostgreSQL. This folder keeps that work so you can still study SQL:
+
+- [schema.sql](schema.sql) and [seed.sql](seed.sql): the original tables and sample data.
+- [minidesk-sql/](minidesk-sql/ticketService.ts): the original service files, for reference. They aren't compiled.
+- [INTERVIEW_NOTES.md](INTERVIEW_NOTES.md): SQL interview notes based on that code.
+
+The complete PostgreSQL version of the app is saved under the Git tag `postgres-version`.
 
 ## Run it
 
-Use a database with MiniDesk's schema and sample data, such as your `minidesk` database. Use port `5433` for your PostgreSQL 18 server.
+Use a PostgreSQL database with `schema.sql` and `seed.sql` loaded, such as a `minidesk` database. Use port `5433` for your PostgreSQL 18 server.
 
 ```bash
 psql -h localhost -p 5433 -U postgres -d minidesk -f examples/postgresql/ctes.sql
@@ -111,7 +119,7 @@ PL/pgSQL is PostgreSQL's procedural language, with variables, `IF` and error han
 
 `stored-procedures.sql` creates three things:
 1. A function returning ticket counts, like MiniDesk's dashboard query.
-2. A trigger that sets `updated_at` automatically. MiniDesk does this in its `UPDATE` query instead.
+2. A trigger that sets `updated_at` automatically. The original app did this in its `UPDATE` query instead.
 3. A procedure that assigns a ticket, and rejects anyone who isn't an agent.
 
 ### 3. Code Reference
@@ -146,7 +154,7 @@ An admin fixes a ticket's title directly in pgAdmin. With the trigger, `updated_
 - **Theory:** What's the difference between a function and a stored procedure?
 - **Theory:** What is a trigger?
 - **Theory:** Should business logic live in the database or the application?
-- **Practical:** Why doesn't MiniDesk use stored procedures?
+- **Practical:** Why didn't the original MiniDesk use stored procedures?
 
 ### 7. Project-Based Answers
 
@@ -159,7 +167,7 @@ A function that runs automatically when rows change. My example updates `updated
 **Database or application?**
 It's a trade-off. In the database, rules apply to every client and data travels less. In the application, logic is easier to test and version, and to understand for developers who don't know SQL deeply.
 
-**Why doesn't MiniDesk use them?**
+**Why didn't the original MiniDesk use them?**
 Its rules depend on who's signed in, which the app already knows, so they're simplest in TypeScript services, with tests. A trigger for `updated_at` would be a reasonable improvement.
 
 ### 8. Follow-up Questions

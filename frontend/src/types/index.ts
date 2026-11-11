@@ -9,7 +9,7 @@ export type TicketCategory = 'general' | 'billing' | 'technical' | 'account'
 
 // There is deliberately no password field. The frontend should never receive one.
 export interface User {
-  id: number
+  id: string // a MongoDB ObjectId
   name: string
   email: string
   role: UserRole
@@ -17,17 +17,17 @@ export interface User {
 }
 
 export interface Ticket {
-  id: number
+  id: string
   title: string
   description: string
   category: TicketCategory
   priority: TicketPriority
   status: TicketStatus
-  customerId: number
+  customerId: string
   customerName: string
   customerEmail: string
   // "| null" means a ticket can exist before anyone is assigned to it.
-  assignedAgentId: number | null
+  assignedAgentId: string | null
   assignedAgentName: string | null
   createdAt: string
   updatedAt: string
@@ -72,9 +72,9 @@ export interface TicketFilterValues {
 
 // Named TicketComment because browsers already have a built-in type called Comment.
 export interface TicketComment {
-  id: number
-  ticketId: number
-  userId: number
+  id: string
+  ticketId: string
+  userId: string
   authorName: string
   message: string
   createdAt: string

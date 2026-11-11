@@ -1,5 +1,5 @@
 -- Common table expressions (CTEs) on the MiniDesk schema.
--- Run against a database with database/schema.sql and seed.sql loaded:
+-- Run against a database with schema.sql and seed.sql from this folder loaded:
 --   psql -h localhost -p 5433 -U postgres -d minidesk -f examples/postgresql/ctes.sql
 -- Only the last example changes data, and it's rolled back.
 

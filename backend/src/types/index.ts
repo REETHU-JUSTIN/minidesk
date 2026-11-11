@@ -1,5 +1,6 @@
 // Data shapes for the API. These match frontend/src/types/index.ts,
 // so the frontend receives exactly what it expects.
+// IDs are MongoDB ObjectIds, sent as 24-character text.
 
 export type UserRole = 'admin' | 'agent' | 'customer'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved'
@@ -8,7 +9,7 @@ export type TicketCategory = 'general' | 'billing' | 'technical' | 'account'
 
 // The only user shape that ever leaves the server. It has no password hash.
 export interface PublicUser {
-  id: number
+  id: string
   name: string
   email: string
   role: UserRole
@@ -16,25 +17,25 @@ export interface PublicUser {
 }
 
 export interface Ticket {
-  id: number
+  id: string
   title: string
   description: string
   category: TicketCategory
   priority: TicketPriority
   status: TicketStatus
-  customerId: number
+  customerId: string
   customerName: string
   customerEmail: string
-  assignedAgentId: number | null
+  assignedAgentId: string | null
   assignedAgentName: string | null
   createdAt: string
   updatedAt: string
 }
 
 export interface TicketComment {
-  id: number
-  ticketId: number
-  userId: number
+  id: string
+  ticketId: string
+  userId: string
   authorName: string
   message: string
   createdAt: string
@@ -76,7 +77,7 @@ export interface UpdateTicketInput {
   title?: string
   description?: string
   status?: TicketStatus
-  assignedAgentId?: number | null
+  assignedAgentId?: string | null
 }
 
 export interface TicketQuery {

@@ -116,7 +116,7 @@ The frontend and backend are separate programs that communicate over HTTP using 
 - **Contract:** `docs/API_DOCUMENTATION.md`.
 - **Shape:** `{ data }` for success and `{ error }` for failure.
 - **Types:** matching shapes in `frontend/src/types` and `backend/src/types`.
-- **Field names:** SQL aliases turn `customer_id` into `customerId`.
+- **Field names:** mapper functions in the services turn database documents into the API's shape.
 - **Validation:** rules on both sides, with the server's being the real ones.
 - **CORS:** the API allows the frontend's origin.
 
@@ -154,7 +154,7 @@ A customer filters by **Open**:
 1. `TicketList` dispatches `fetchTickets`.
 2. The thunk calls `getTickets`, and Axios adds the token.
 3. Express runs `authenticate`, then the controller and service.
-4. The SQL includes `customer_id` and `status` conditions.
+4. The MongoDB filter includes the customer and the status.
 5. Rows go back as JSON, and the reducer stores them.
 6. The table re-renders.
 
@@ -169,7 +169,7 @@ A customer filters by **Open**:
 ### 7. Project-Based Answers
 
 **From click to screen?**
-A click dispatches a Redux thunk, which calls a service. Axios sends an HTTP request with the JWT. Express runs middleware, then a controller and service, which runs parameterized SQL. The JSON response is stored by a reducer, and React re-renders the components selecting that data.
+A click dispatches a Redux thunk, which calls a service. Axios sends an HTTP request with the JWT. Express runs middleware, then a controller and service, which queries MongoDB. The JSON response is stored by a reducer, and React re-renders the components selecting that data.
 
 **What is CORS, and why did you need it?**
 Browsers stop a page from reading responses from another origin unless the server allows it. My frontend and API run on different ports, so the API allows the frontend's origin.

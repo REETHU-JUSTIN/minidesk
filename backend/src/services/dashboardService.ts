@@ -1,21 +1,30 @@
-import { pool } from '../config/db'
+import { Types } from 'mongoose'
+import { Ticket } from '../models/Ticket'
 import type { DashboardStats, PublicUser } from '../types'
 
-export async function getDashboardStats(user: PublicUser): Promise<DashboardStats> {
-  // Customers only count their own tickets. Everyone else passes NULL, which matches all.
-  const customerId = user.role === 'customer' ? user.id : null
+// $cond adds 1 for tickets with this status, and 0 for the rest.
+const countStatus = (status: string) => ({ $sum: { $cond: [{ $eq: ['$status', status] }, 1, 0] } })
 
-  // One query calculates all four numbers. FILTER counts only the matching rows.
-  // ::int is needed because COUNT returns a type the driver would otherwise give back as text.
-  const result = await pool.query<DashboardStats>(
-    `SELECT
-       COUNT(*)::int AS total,
-       COUNT(*) FILTER (WHERE status = 'open')::int AS open,
-       COUNT(*) FILTER (WHERE status = 'in_progress')::int AS "inProgress",
-       COUNT(*) FILTER (WHERE status = 'resolved')::int AS resolved
-     FROM tickets
-     WHERE ($1::int IS NULL OR customer_id = $1)`,
-    [customerId],
-  )
-  return result.rows[0]
+export async function getDashboardStats(user: PublicUser): Promise<DashboardStats> {
+  // Unlike normal queries, aggregation doesn't convert text to ObjectIds automatically.
+  // Customers only count their own tickets.
+  const match = user.role === 'customer' ? { customer: new Types.ObjectId(user.id) } : {}
+
+  // One pipeline calculates all four numbers. _id: null puts every ticket in a single group.
+  const [stats] = await Ticket.aggregate<DashboardStats>([
+    { $match: match },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        open: countStatus('open'),
+        inProgress: countStatus('in_progress'),
+        resolved: countStatus('resolved'),
+      },
+    },
+    { $project: { _id: 0 } },
+  ])
+
+  // With no tickets, there are no groups, so the pipeline returns nothing.
+  return stats ?? { total: 0, open: 0, inProgress: 0, resolved: 0 }
 }

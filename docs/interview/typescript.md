@@ -106,7 +106,7 @@ interface User {
 
 ```ts
 export interface User {
-  id: number
+  id: string // a MongoDB ObjectId
   name: string
   email: string
   role: UserRole
@@ -176,7 +176,7 @@ type TicketStatus = 'open' | 'in_progress' | 'resolved'
 
 ### 2. Project Implementation
 
-`UserRole`, `TicketStatus`, `TicketPriority`, `TicketCategory`, `TicketScope` and `ButtonVariant` are all unions. Unions also describe values that may be missing, like `number | null`.
+`UserRole`, `TicketStatus`, `TicketPriority`, `TicketCategory`, `TicketScope` and `ButtonVariant` are all unions. Unions also describe values that may be missing, like `string | null`.
 
 ### 3. Code Reference
 
@@ -217,7 +217,7 @@ A type allowing one of several options. `TicketStatus` allows only three strings
 String unions need no runtime code and the values are plain strings, which match JSON from the API. `enum`s generate extra JavaScript. My TypeScript settings also disallow them, through `erasableSyntaxOnly`.
 
 **How did you model ticket status?**
-As a union of three strings, with a `Record` mapping each to a label and a color. The database mirrors it with a `CHECK` constraint.
+As a union of three strings, with a `Record` mapping each to a label and a color. The Mongoose schema mirrors it with an `enum`.
 
 ### 8. Follow-up Questions
 
@@ -244,7 +244,7 @@ As a union of three strings, with a `Record` mapping each to a label and a color
 **File:** [frontend/src/types/index.ts](../../frontend/src/types/index.ts)
 
 ```ts
-assignedAgentId: number | null
+assignedAgentId: string | null
 assignedAgentName: string | null
 ```
 
@@ -264,7 +264,7 @@ The difference communicates intent. "Not provided" and "has no value" are differ
 
 ### 5. Real-Time Scenario
 
-A database row for an unassigned ticket has `NULL` in its agent column, which arrives as `null` in JSON. Because the type says `number | null`, the code must handle that case, and the page shows "Unassigned".
+A ticket with no agent has `null` in the database, which arrives as `null` in JSON. Because the type says `string | null`, the code must handle that case, and the page shows "Unassigned".
 
 ### 6. Interview Questions
 

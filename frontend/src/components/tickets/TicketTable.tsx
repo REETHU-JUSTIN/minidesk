@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Ticket } from '../../types'
 import { formatDate } from '../../utils/formatDate'
+import { formatTicketId } from '../../utils/formatTicketId'
 import { PriorityBadge, StatusBadge } from '../common/Badge'
 
 const tableHeadings = ['Ticket ID', 'Title', 'Customer', 'Assigned Agent', 'Priority', 'Status', 'Created Date', 'Actions']
@@ -22,7 +23,7 @@ export function TicketTable({ tickets }: { tickets: Ticket[] }) {
         <tbody className="divide-y divide-slate-200">
           {tickets.map((ticket) => (
             <tr key={ticket.id} className="hover:bg-slate-50">
-              <td className="px-5 py-3 text-slate-500 tabular-nums">#{ticket.id}</td>
+              <td className="px-5 py-3 text-slate-500 tabular-nums">{formatTicketId(ticket.id)}</td>
               <td className="px-5 py-3 font-medium">{ticket.title}</td>
               <td className="px-5 py-3 text-slate-600">{ticket.customerName}</td>
               {/* ?? shows the fallback only when the left side is null or undefined */}

@@ -238,7 +238,7 @@ I create a new one. My filter handler does `{ ...currentFilters, ...changes }`. 
 - `filter` chooses sidebar links by role, and removes a deleted ticket from Redux.
 - `split`, `slice`, `map` and `join` build a user's initials.
 
-Filtering and sorting tickets happen in SQL on the server, which is far more efficient than doing it in JavaScript.
+Filtering and sorting tickets happen in MongoDB on the server, which is far more efficient than doing it in JavaScript.
 
 ### 3. Code Reference
 
@@ -259,11 +259,10 @@ state.items = state.items.filter((ticket) => ticket.id !== action.payload)
 **File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
 
 ```ts
-const changedColumns = columns.filter(([, value]) => value !== undefined)
-const setClauses = changedColumns.map(([column], index) => `${column} = $${index + 1}`)
+items: records.map(toTicket),
 ```
 
-- Array methods build the SQL for an update, using only the fields that were sent.
+- `map` turns each database record into the shape the API promises.
 
 **File:** [frontend/src/utils/getInitials.ts](../../frontend/src/utils/getInitials.ts)
 
@@ -295,14 +294,14 @@ An admin deletes ticket #1006. The API removes it from the database. When Redux 
 `map` returns a new array. `forEach` returns nothing and is only for side effects. JSX needs returned values, so lists use `map`.
 
 **Where have you used these?**
-`getInitials` chains `split`, `slice`, `map` and `join`. My Redux reducers use `map` and `filter` to update the ticket list immutably, and my update query builds its `SET` clause with them.
+`getInitials` chains `split`, `slice`, `map` and `join`. My Redux reducers use `map` and `filter` to update the ticket list immutably, and the API uses `map` to shape database records.
 
 **Which changes the original?**
-`sort` does, so you'd spread the array into a copy first, or use `toSorted`. `reverse` and `push` also change the original. MiniDesk's tickets are sorted in SQL, so this doesn't come up in the current code.
+`sort` does, so you'd spread the array into a copy first, or use `toSorted`. `reverse` and `push` also change the original. MiniDesk's tickets are sorted by MongoDB, so this doesn't come up in the current code.
 
 ### 8. Follow-up Questions
 
-- **How would you count tickets by status with `reduce`?** Start with zeroed counts, then add one to the matching status for each ticket, returning the running total. I do this in SQL instead.
+- **How would you count tickets by status with `reduce`?** Start with zeroed counts, then add one to the matching status for each ticket, returning the running total. I do this with a MongoDB aggregation instead.
 - **How does a `sort` compare function work?** It returns a negative or positive number to set the order. `b - a` on timestamps gives newest first.
 - **What does `find` return if there's no match?** `undefined`, which TypeScript makes you handle.
 

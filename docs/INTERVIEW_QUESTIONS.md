@@ -29,7 +29,7 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | [Frontend architecture](interview/frontend-architecture.md) | The service layer |
 | [Node.js and Express](interview/nodejs-express.md) | The event loop, REST and status codes, routes and layers, middleware, error handling, validation, environment variables and CORS |
 | [Authentication](interview/authentication.md) | Password hashing with bcrypt, JWT, role-based authorization |
-| [PostgreSQL and SQL](interview/postgresql.md) | Schema design, constraints, joins, aggregation, indexes, parameterized queries, connection pooling |
+| [MongoDB and Mongoose](interview/mongodb.md) | Embedding and referencing, schemas and models, queries and populate, aggregation, indexes, NoSQL injection |
 | [API integration](interview/api-integration.md) | Axios and interceptors, how the frontend and backend work together |
 | [Testing](interview/testing.md) | Testing fundamentals, React Testing Library, mocking, API testing with Supertest |
 | [Docker and deployment](interview/docker-deployment.md) | Images and containers, Docker Compose, production configuration |
@@ -43,6 +43,7 @@ These are in the [examples folder](../examples/README.md), in the same format:
 |---|---|
 | [MongoDB](../examples/mongodb/README.md) | CRUD, aggregation pipelines |
 | [PostgreSQL](../examples/postgresql/README.md) | Common table expressions, functions, triggers, procedures |
+| [SQL interview notes](../examples/postgresql/INTERVIEW_NOTES.md) | Schema design, constraints, joins, indexes, SQL injection, from MiniDesk's original PostgreSQL version |
 | [Git](../examples/git/README.md) | Branching and merging, pull requests |
 | [CI/CD](../examples/ci-cd/README.md) | Continuous integration with GitHub Actions |
 | [Docker](../examples/docker/README.md) | Images, containers, volumes, networks |
@@ -58,4 +59,4 @@ These are in the [examples folder](../examples/README.md), in the same format:
 
 ## Be accurate about the project's current state
 
-An interviewer may look closely at your project, so describe it as it really is. The frontend, API and PostgreSQL database are connected and work together. It has an automated test suite. It isn't deployed, and its Docker files haven't been run, so don't claim either. These notes are updated whenever the code changes.
+An interviewer may look closely at your project, so describe it as it really is. The frontend, API and MongoDB database are connected and work together. It has an automated test suite. It isn't deployed, and its Docker files haven't been run, so don't claim either. These notes are updated whenever the code changes.

@@ -24,7 +24,7 @@ Component -> Redux thunk -> Service -> Axios -> API
 **File:** [frontend/src/services/ticketService.ts](../../frontend/src/services/ticketService.ts)
 
 ```ts
-export async function updateTicket(ticketId: number, changes: UpdateTicketInput): Promise<Ticket> {
+export async function updateTicket(ticketId: string, changes: UpdateTicketInput): Promise<Ticket> {
   const response = await api.put<ApiResponse<Ticket>>(`/tickets/${ticketId}`, changes)
   return response.data.data
 }

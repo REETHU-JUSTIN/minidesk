@@ -2,7 +2,7 @@
 
 This guide follows the project phase by phase, explaining what was built, why, and how the pieces connect.
 
-**Read it as a history.** Each phase section describes the code as it was at that time. Later phases replaced some of it: for example, the temporary sample data and preview backend from Phases 1 to 4 were deleted in Phase 7. For how the code works **now**, use these instead:
+**Read it as a history.** Each phase section describes the code as it was at that time. Later work replaced some of it: for example, the temporary sample data from Phases 1 to 4 was deleted in Phase 7, and PostgreSQL from Phase 6 was replaced by MongoDB in the MERN conversion at the end. For how the code works **now**, use these instead:
 
 - [Project overview](PROJECT_OVERVIEW.md): what MiniDesk is and how it fits together
 - [Folder structure](FOLDER_STRUCTURE.md): what each file does
@@ -1038,3 +1038,37 @@ The [examples folder](../examples/README.md) covers topics outside MiniDesk, eac
 4. Run both MongoDB scripts. MongoDB is already installed on this computer, running as a Windows service, so `mongodb://localhost:27017` should work. The scripts only use a database called `minidesk_examples`. Then add a `$match` stage counting only high-priority tickets.
 5. Write three more user stories for features MiniDesk doesn't have, such as file attachments, with acceptance criteria and points.
 6. When you're ready for CI, copy `examples/ci-cd/ci.yml` to `.github/workflows/ci.yml`, push it, and watch the **Actions** tab.
+
+## MERN conversion: PostgreSQL to MongoDB
+
+MiniDesk was converted to the MERN stack, by replacing PostgreSQL with MongoDB and Mongoose. The full explanations are in the [MongoDB and Mongoose](interview/mongodb.md) guide.
+
+The original version is saved under the Git tag `postgres-version`. Its SQL and notes are in [examples/postgresql](../examples/postgresql/README.md).
+
+### What changed
+
+| Area | Before | After |
+|---|---|---|
+| Tables | `schema.sql` | Mongoose models in `backend/src/models/` |
+| Comments | Their own table | Embedded inside each ticket |
+| Linking data | SQL `JOIN` | `populate` |
+| Dashboard | `COUNT(*) FILTER` | An aggregation pipeline |
+| IDs | Numbers like `1006` | ObjectIds, shown as the last 6 characters |
+| Tests | A PostgreSQL test database | A temporary in-memory MongoDB |
+
+**What didn't change:** the routes, controllers, middleware, Redux reducers and almost all of the React code. That's the benefit of separating layers.
+
+### How it was tested
+
+- 176 automated tests pass.
+- 18 bugs were added on purpose, one at a time, to see whether the tests noticed. They caught 17.
+- The 18th showed a real gap, a missing test for badly formed ticket IDs, so that test was added.
+- 72 browser checks passed through the full app, on a real local MongoDB.
+
+### Practice exercises
+
+1. Open the `minidesk` database in MongoDB Compass, and find a ticket with embedded comments.
+2. In `dashboardService.ts`, remove `new Types.ObjectId`, run the tests and explain the failure. Then restore it.
+3. Add a compound index on `status` and `createdAt`, then check a query with `.explain('executionStats')`.
+4. Compare `backend/src/services/ticketService.ts` with `examples/postgresql/minidesk-sql/ticketService.ts`. Which is easier to read, and why?
+5. Add a `tags` array to tickets, and a filter that uses it.

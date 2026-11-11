@@ -28,15 +28,15 @@ export type ValidationResult<T> = { ok: true; data: T } | { ok: false; errors: R
 
 export type Validator<T> = (body: Record<string, unknown>) => ValidationResult<T>
 
-// The largest value a PostgreSQL INTEGER column can hold.
-const MAX_ID = 2_147_483_647
+// A MongoDB ObjectId, written as 24 hexadecimal characters.
+const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i
 
-function isValidId(value: unknown): boolean {
-  return Number.isInteger(value) && (value as number) > 0 && (value as number) <= MAX_ID
+export function isValidId(value: unknown): value is string {
+  return typeof value === 'string' && OBJECT_ID_PATTERN.test(value)
 }
 
 function getTrimmedString(value: unknown): string {
-  // PostgreSQL can't store the null character, so it's removed before reaching a query.
+  // The null character has no place in text, and can cause problems with other tools.
   return typeof value === 'string' ? value.replaceAll('\0', '').trim() : ''
 }
 
@@ -127,7 +127,7 @@ export const validateUpdateTicket: Validator<UpdateTicketInput> = (body) => {
     const agentId = body.assignedAgentId
     // null is allowed here, because it means "unassign this ticket".
     if (agentId === null || isValidId(agentId)) {
-      data.assignedAgentId = agentId as number | null
+      data.assignedAgentId = agentId
     } else {
       errors.assignedAgentId = 'Assigned agent must be a user ID or null.'
     }
@@ -148,10 +148,9 @@ export const validateComment: Validator<{ message: string }> = (body) => {
 }
 
 // URL values are always text, so these helpers convert and check them.
-export function parseId(value: unknown): number {
-  const id = Number(value)
-  if (!isValidId(id)) throw new AppError(400, 'The ID must be a positive whole number.')
-  return id
+export function parseId(value: unknown): string {
+  if (!isValidId(value)) throw new AppError(400, 'That ID is not valid.')
+  return value
 }
 
 function parsePositiveInteger(value: unknown, fallback: number, maximum: number): number | null {

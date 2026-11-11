@@ -15,22 +15,25 @@ import { getUsers } from '../services/userService'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Ticket, UpdateTicketInput, User } from '../types'
 import { formatDate } from '../utils/formatDate'
+import { formatTicketId } from '../utils/formatTicketId'
 import { categoryLabels } from '../utils/ticketLabels'
 
-export function TicketDetailsPage() {
-  // useParams reads :ticketId from the URL. It's always text, so we convert it and check it.
-  const { ticketId } = useParams()
-  const numericId = Number(ticketId)
+// A MongoDB ObjectId: 24 hexadecimal characters.
+const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i
 
-  if (!Number.isInteger(numericId) || numericId <= 0) {
+export function TicketDetailsPage() {
+  // useParams reads :ticketId from the URL. Anyone can type anything there, so it's checked first.
+  const { ticketId } = useParams()
+
+  if (!ticketId || !OBJECT_ID_PATTERN.test(ticketId)) {
     return <ErrorMessage message="We couldn't find that ticket." />
   }
 
   // The key gives each ticket a fresh component, so nothing carries over between tickets.
-  return <TicketDetailsLoader key={numericId} ticketId={numericId} />
+  return <TicketDetailsLoader key={ticketId} ticketId={ticketId} />
 }
 
-function TicketDetailsLoader({ ticketId }: { ticketId: number }) {
+function TicketDetailsLoader({ ticketId }: { ticketId: string }) {
   const dispatch = useAppDispatch()
   const { selectedTicket, detailStatus, detailError } = useAppSelector((state) => state.tickets)
 
@@ -132,7 +135,7 @@ function TicketDetails({ ticket }: { ticket: Ticket }) {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm text-slate-500 tabular-nums">
-                  #{ticket.id} · {categoryLabels[ticket.category]}
+                  {formatTicketId(ticket.id)} · {categoryLabels[ticket.category]}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold break-words">{ticket.title}</h2>
               </div>
@@ -211,7 +214,7 @@ function TicketDetails({ ticket }: { ticket: Ticket }) {
           </>
         }
       >
-        This permanently deletes ticket #{ticket.id} and all of its comments. This can't be undone.
+        This permanently deletes ticket {formatTicketId(ticket.id)} and all of its comments. This can't be undone.
       </Modal>
     </div>
   )

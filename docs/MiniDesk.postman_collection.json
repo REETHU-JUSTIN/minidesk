@@ -10,7 +10,8 @@
     { "key": "adminToken", "value": "" },
     { "key": "agentToken", "value": "" },
     { "key": "customerToken", "value": "" },
-    { "key": "newTicketId", "value": "" }
+    { "key": "newTicketId", "value": "" },
+    { "key": "agentId", "value": "" }
   ],
   "item": [
     {
@@ -31,7 +32,8 @@
           "name": "Login as agent",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-            "pm.collectionVariables.set('agentToken', pm.response.json().data.token);"
+            "pm.collectionVariables.set('agentToken', pm.response.json().data.token);",
+            "pm.collectionVariables.set('agentId', pm.response.json().data.user.id);"
           ] } }],
           "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{ \"email\": \"sam@example.com\", \"password\": \"{{demoPassword}}\" }" } }
         },
@@ -113,7 +115,7 @@
             "const ticket = pm.response.json().data;",
             "pm.test('Is updated', () => { pm.expect(ticket.status).to.eql('in_progress'); pm.expect(ticket.assignedAgentName).to.eql('Sam Carter'); });"
           ] } }],
-          "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{agentToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}", "body": { "mode": "raw", "raw": "{ \"status\": \"in_progress\", \"assignedAgentId\": 2 }" } }
+          "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{agentToken}}" }, { "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/tickets/{{newTicketId}}", "body": { "mode": "raw", "raw": "{ \"status\": \"in_progress\", \"assignedAgentId\": \"{{agentId}}\" }" } }
         },
         {
           "name": "Try to change status as customer",

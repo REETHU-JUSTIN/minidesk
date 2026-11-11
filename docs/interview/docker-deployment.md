@@ -62,7 +62,7 @@ Deployment needs the same Node version, packages and settings every time. A cont
 
 ### 5. Real-Time Scenario
 
-A new developer joins. Rather than installing Node and PostgreSQL and configuring each, they could run `docker compose up --build` and get the whole stack, provided Docker is installed. That's the intended outcome, but it hasn't been tested yet.
+A new developer joins. Rather than installing Node and MongoDB and configuring each, they could run `docker compose up --build` and get the whole stack, provided Docker is installed. That's the intended outcome, but it hasn't been tested yet.
 
 ### 6. Interview Questions
 
@@ -84,10 +84,10 @@ A virtual machine includes a whole operating system. A container shares the host
 Several `FROM` stages in one Dockerfile, where later stages copy only what they need from earlier ones. Mine compiles TypeScript in one stage, and runs the compiled code in a smaller one.
 
 **Explain your Dockerfile.**
-The first stage installs every package and compiles TypeScript. The second installs only production packages, copies the compiled code and the SQL files, switches to a non-root user, and starts the server. It also has a health check that calls `/api/health`.
+The first stage installs every package and compiles TypeScript. The second installs only production packages, copies the compiled code, switches to a non-root user, and starts the server. It also has a health check that calls `/api/health`.
 
 **Have you run it?**
-No. Docker wasn't installed, so I won't claim it works. I tested its steps another way: in a clean copy of the project, I ran the production install, the build, the database setup and the server. The production install contained no development tools, and the server worked against a real PostgreSQL database.
+No. Docker wasn't installed, so I won't claim it works. I tested its steps another way: in a clean copy of the project, I ran the production install, the build, the database setup and the server. The production install contained no development tools, and the server worked against a real MongoDB database.
 
 ### 8. Follow-up Questions
 
@@ -105,34 +105,34 @@ Docker Compose runs several containers together from one file, describing each s
 
 ### 2. Project Implementation
 
-`docker-compose.yml` defines three services: `db` (PostgreSQL), `api` and `web` (nginx with the frontend). The root `.env` provides the secrets.
+`docker-compose.yml` defines three services: `db` (MongoDB), `api` and `web` (nginx with the frontend). The root `.env` provides the secrets.
 
 ### 3. Code Reference
 
 **File:** [docker-compose.yml](../../docker-compose.yml)
 
 ```yaml
-POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}
 ```
 
 ```yaml
-DB_HOST: db
+MONGODB_URI: mongodb://minidesk:${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}@db:27017/minidesk?authSource=admin
 ```
 
 ```yaml
 depends_on:
   db:
-    # Waits until PostgreSQL accepts connections, not just until its container starts.
+    # Waits until MongoDB accepts connections, not just until its container starts.
     condition: service_healthy
 ```
 
 ```yaml
-- db-data:/var/lib/postgresql/data
+- db-data:/data/db
 ```
 
 - **`:?`:** Compose refuses to start if the value is missing, rather than running with an empty password.
-- **`DB_HOST: db`:** the API reaches the database by its service name.
-- **`service_healthy`:** a container can be running before PostgreSQL is ready, so this waits for its health check.
+- **`@db:27017`:** the API reaches the database by its service name.
+- **`service_healthy`:** a container can be running before MongoDB is ready, so this waits for its health check.
 - **The volume:** keeps the data when containers are removed.
 
 ### 4. Why We Used It
@@ -143,7 +143,7 @@ Running three containers by hand means long commands in the right order. Compose
 
 `docker compose up` is designed to do this:
 
-1. Start PostgreSQL, and wait until its health check passes.
+1. Start MongoDB, and wait until its health check passes.
 2. Start the API, which connects to `db`.
 3. Start nginx with the frontend.
 
@@ -162,7 +162,7 @@ The browser then loads `localhost:8080`, and the frontend calls `localhost:5000`
 Defining and running multi-container apps from one file. I use it for the database, API and frontend together.
 
 **How do containers communicate?**
-Over a network Compose creates, using service names as hostnames. My API connects to `db:5432`.
+Over a network Compose creates, using service names as hostnames. My API connects to `db:27017`.
 
 **What is a volume?**
 Storage that lives outside a container. Containers are disposable, so without a volume the database would be wiped on every rebuild.
@@ -174,7 +174,7 @@ The API connects from inside Docker's network, where `db` is a known name. The f
 
 - **Does `depends_on` alone wait for the database?** No, only for the container to start. That's why I added a health check condition.
 - **Would you use Compose in production?** For a single server it can work. Larger setups use orchestration tools like Kubernetes, or managed services.
-- **Why is PostgreSQL's port not published?** Only the API needs it, inside the Docker network. Not publishing it avoids exposing the database, and avoids clashing with PostgreSQL already installed on the computer.
+- **Why is MongoDB's port not published?** Only the API needs it, inside the Docker network. Not publishing it avoids exposing the database, and avoids clashing with MongoDB already installed on the computer.
 
 ---
 
@@ -192,7 +192,7 @@ Code that works locally needs adjusting for production:
 
 ### 2. Project Implementation
 
-- **`DATABASE_URL` and `DB_SSL`:** for hosted databases.
+- **`MONGODB_URI`:** one address for local or hosted databases.
 - **`TRUST_PROXY`:** for hosting services' proxies.
 - **Rate limiting:** on login and sign-up.
 - **Graceful shutdown:** on `SIGTERM`.
@@ -224,21 +224,20 @@ if (env.trustProxy > 0) app.set('trust proxy', env.trustProxy)
 
 ```ts
 server.close(async () => {
-  await pool.end()
+  await disconnectDatabase()
   process.exit(0)
 })
 ```
 
-- On `SIGTERM`, the server stops accepting new connections, finishes current requests, then closes the database pool.
+- On `SIGTERM`, the server stops accepting new connections, finishes current requests, then closes the database connection.
 
 **File:** [backend/src/scripts/setupDatabase.ts](../../backend/src/scripts/setupDatabase.ts)
 
 ```ts
-if (existing.rows[0].found) {
-  console.log('The tables already exist, so nothing was changed.')
+await Promise.all([User.init(), Ticket.init()])
 ```
 
-- `schema.sql` deletes existing tables, so this guard stops it from wiping a real database.
+- This builds the indexes only. It adds no sample data, deletes nothing, and can be run again safely.
 
 **File:** [frontend/nginx.conf](../../frontend/nginx.conf)
 
@@ -280,10 +279,10 @@ Configuration comes from the host's environment variables, secrets are new, and 
 There's only one HTML file. A request for `/tickets/1006` has no matching file, so the server must return `index.html` and let React Router handle it.
 
 **What is graceful shutdown?**
-On a stop signal, finishing in-flight requests before exiting. Hosts send `SIGTERM` during deployments, and my server closes connections and the database pool cleanly. I couldn't test it, because Windows doesn't deliver that signal the same way Linux does.
+On a stop signal, finishing in-flight requests before exiting. Hosts send `SIGTERM` during deployments, and my server closes connections and the database cleanly. I couldn't test it, because Windows doesn't deliver that signal the same way Linux does.
 
 **How would you deploy it?**
-The frontend on a static host like Vercel, with `VITE_API_URL` set when it's built. The API on a Node host like Render, with environment variables for the database, secret, allowed origin and proxy. The database on a managed PostgreSQL service. Then I'd run `db:setup` and `user:create` from the host's shell. I've written this up as a guide, but I haven't deployed it.
+The frontend on a static host like Vercel, with `VITE_API_URL` set when it's built. The API on a Node host like Render, with environment variables for the database, secret, allowed origin and proxy. The database on MongoDB Atlas. Then I'd run `db:setup` and `user:create` from the host's shell. I've written this up as a guide, but I haven't deployed it.
 
 **How did you protect login?**
 `express-rate-limit` allows a set number of failed attempts per address in 15 minutes, counting only failures. A test confirms the fourth failure is blocked, and also fails if I remove the limiter.

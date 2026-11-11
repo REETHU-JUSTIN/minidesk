@@ -8,7 +8,7 @@
 |---|---|---|
 | Frontend static files | **S3**, served through **CloudFront** | S3 stores the files, and CloudFront is a CDN that adds HTTPS and caching |
 | API container | **App Runner** or **ECS on Fargate** | Runs the backend Docker image without managing servers |
-| Database | **RDS for PostgreSQL** | Managed PostgreSQL, with backups and updates handled for you |
+| Database | **MongoDB Atlas on AWS**, or **Amazon DocumentDB** | Managed MongoDB, with backups and updates handled for you |
 | Secrets | **Secrets Manager** or **SSM Parameter Store** | Stores `JWT_SECRET` and the database password, encrypted |
 | Container images | **ECR** | AWS's private image registry |
 | Permissions | **IAM** | Controls which people and services may do what |
@@ -17,18 +17,18 @@
 ```
 Users --> CloudFront --> S3 (frontend)
    |
-   +----> App Runner / ECS (API) --> RDS PostgreSQL
+   +----> App Runner / ECS (API) --> MongoDB Atlas
                   |
                   +--> Secrets Manager, CloudWatch
 ```
 
 ## Deployment steps, in outline
 
-1. **Database:** create an RDS PostgreSQL instance in a private network, not publicly reachable.
+1. **Database:** create a MongoDB Atlas cluster on AWS, and restrict which networks can reach it.
 2. **Secrets:** store the database address and a new `JWT_SECRET` in Secrets Manager.
 3. **API image:** build `backend/Dockerfile`, and push the image to ECR.
-4. **API service:** create an App Runner service from that image, and set environment variables from the secrets. Set `NODE_ENV=production`, `DB_SSL=true` and `TRUST_PROXY=1`.
-5. **Tables and first admin:** run `npm run db:setup` and `npm run user:create` once, for example as a one-off ECS task.
+4. **API service:** create an App Runner service from that image, and set environment variables from the secrets. Set `NODE_ENV=production` and `TRUST_PROXY=1`.
+5. **Indexes and first admin:** run `npm run db:setup` and `npm run user:create` once, for example as a one-off ECS task.
 6. **Frontend:** build it with `VITE_API_URL` pointing at the API, upload `dist/` to S3, and put CloudFront in front of it.
 7. **Page routing:** set CloudFront to return `index.html` for unknown paths, so page refreshes work.
 8. **Connect them:** set the API's `CLIENT_ORIGIN` to the CloudFront address.
@@ -41,7 +41,7 @@ Users --> CloudFront --> S3 (frontend)
 
 AWS provides building blocks rather than one "host my app" button. The main ideas:
 - **Compute** runs code. EC2 gives you whole virtual servers, while ECS, Fargate and App Runner run containers.
-- **Managed services** like RDS handle maintenance for you.
+- **Managed services** handle maintenance for you.
 - **Regions** are separate geographic locations.
 - **IAM** controls access with the principle of least privilege: each person and service gets only the permissions it needs.
 
@@ -54,15 +54,10 @@ MiniDesk isn't on AWS. The table above shows where each part would go. Its Docke
 **File:** [backend/src/config/env.ts](../../backend/src/config/env.ts)
 
 ```ts
-const databaseUrl = process.env.DATABASE_URL
-```
-
-```ts
-dbSsl: process.env.DB_SSL === 'true',
+mongodbUri: requireEnv('MONGODB_URI'),
 ```
 
 - Everything the API needs comes from environment variables, so on AWS, Secrets Manager and the service's settings supply them, and no code changes are needed.
-- RDS supports encrypted connections, which `DB_SSL` turns on.
 
 ### 4. Why Use It
 
@@ -70,7 +65,7 @@ Managed services take over backups, patching, scaling and HTTPS certificates, wh
 
 ### 5. Real-Time Scenario
 
-Traffic doubles during a product launch. App Runner starts more copies of the API automatically. RDS keeps daily backups, so a bad change can be recovered. CloudFront serves the frontend from locations near users, which keeps it fast. One thing would need changing: MiniDesk's rate limits are counted in memory, so each API copy would count separately until they shared a store like Redis.
+Traffic doubles during a product launch. App Runner starts more copies of the API automatically. The managed database keeps backups, so a bad change can be recovered. CloudFront serves the frontend from locations near users, which keeps it fast. One thing would need changing: MiniDesk's rate limits are counted in memory, so each API copy would count separately until they shared a store like Redis.
 
 ### 6. Interview Questions
 
@@ -91,7 +86,7 @@ IAM controls access to AWS resources. Least privilege means each person or servi
 Only the API needs to reach the database, so hiding it from the internet removes a whole category of attack.
 
 **How would you deploy it?**
-Frontend on S3 with CloudFront, the API's Docker image on App Runner, PostgreSQL on RDS in a private network, and secrets in Secrets Manager. I've planned this but haven't done it. My deployment guide also covers simpler hosting services.
+Frontend on S3 with CloudFront, the API's Docker image on App Runner, MongoDB on Atlas with restricted network access, and secrets in Secrets Manager. I've planned this but haven't done it. My deployment guide also covers simpler hosting services.
 
 ### 8. Follow-up Questions
 

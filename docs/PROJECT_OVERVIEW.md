@@ -1,6 +1,6 @@
 # MiniDesk Project Overview
 
-MiniDesk is a full-stack support ticket management system. Customers raise tickets, agents take ownership and resolve them, and admins oversee everything. It's a smaller version of tools like Zendesk and Freshdesk, built to learn full-stack development end to end.
+MiniDesk is a MERN stack support ticket management system. Customers raise tickets, agents take ownership and resolve them, and admins oversee everything. It's a smaller version of tools like Zendesk and Freshdesk, built to learn full-stack development end to end.
 
 ## The problem it solves
 
@@ -36,7 +36,7 @@ Customers can only create accounts for themselves. Admin and agent accounts are 
 |---|---|
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, React Router 7, Redux Toolkit, Context API, React Hook Form, Axios, Lucide icons |
 | Backend | Node.js 22, Express 5, TypeScript, JWT, bcrypt, express-rate-limit |
-| Database | PostgreSQL, using parameterized SQL through the `pg` library |
+| Database | MongoDB, using Mongoose schemas, populate and aggregation pipelines |
 | Testing | Vitest, React Testing Library, Supertest, Postman |
 | Tooling | Git and GitHub, oxlint, Docker and Docker Compose (written, not yet run) |
 
@@ -54,13 +54,13 @@ Browser
 Express API
   Middleware: CORS, JSON, rate limits, authenticate, authorize, validate
   Controllers: read requests, send responses
-  Services: business rules and SQL
+  Services: business rules and MongoDB queries
   Error handler: one response shape for every error
         |
-        |  Connection pool, parameterized queries
+        |  Mongoose connection pool
         v
-PostgreSQL
-  users  <-  tickets  <-  comments
+MongoDB
+  users  <-  tickets (with embedded comments)
 ```
 
 ## What happens when an agent resolves a ticket
@@ -69,7 +69,7 @@ PostgreSQL
 2. `TicketDetails` dispatches the `updateTicket` thunk, which calls `ticketService.updateTicket`.
 3. Axios sends `PUT /api/tickets/1006`, and its interceptor attaches the agent's token.
 4. Express runs `authenticate`, which verifies the token and loads the agent, then validation, which accepts only known fields.
-5. `ticketService.updateTicket` checks the agent may change status, then runs an `UPDATE` with parameters.
+5. `ticketService.updateTicket` checks the agent may change status, then updates the document with `$set`.
 6. The updated ticket returns as JSON. The Redux reducer stores it, and the page and list both show the new status.
 
 ## Security
@@ -77,14 +77,14 @@ PostgreSQL
 - **Passwords:** hashed with bcrypt, and never returned by the API.
 - **Login tokens:** JWTs signed with a secret from an environment variable, and checked on every protected request.
 - **Permissions:** enforced on the server, at both route and record level. Customers get a 404 for other people's tickets, so they can't discover which ticket numbers exist.
-- **SQL injection:** prevented by parameterized queries everywhere.
+- **NoSQL injection:** prevented by strict type checks, ID format checks and escaped search text.
 - **Abuse:** rate limiting on login and sign-up.
 - **Errors:** internal details are logged on the server and never sent to clients.
 - **Secrets:** kept in `.env` files that Git ignores.
 
 ## Testing
 
-- **171 automated tests:** 58 frontend tests with React Testing Library, and 113 backend tests with Supertest against a real PostgreSQL test database.
+- **176 automated tests:** 62 frontend tests with React Testing Library, and 114 backend tests with Supertest against a temporary MongoDB server.
 - **Tests that catch bugs:** deliberately breaking the code in 18 ways, such as removing permission checks, was caught by the tests every time.
 - **Postman:** a collection of 20 requests with automated checks.
 - **One-off browser checks:** 72 checks through the full stack in a real browser, run during development. They aren't stored as a permanent test suite.
@@ -104,6 +104,7 @@ The application is complete and works from end to end on a local machine.
 - **Notifications:** they show recently updated tickets, rather than personal notifications.
 - **Updates:** there are no live updates, so other people's changes appear on the next load.
 - **Title search:** it can't use a normal database index, which is fine at this size.
+- **References:** MongoDB doesn't enforce links between documents, so the API checks them.
 - **Modal focus:** keyboard focus isn't trapped inside modals.
 - **Rate limits:** the counts are kept in memory, so several servers would need a shared store.
 - **End-to-end tests:** none are stored in the repository.
@@ -112,7 +113,7 @@ The application is complete and works from end to end on a local machine.
 
 > "MiniDesk is a full-stack support ticket system, a bit like a small Zendesk. Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role only sees what it's allowed to, and that's enforced on the server.
 >
-> The frontend uses React, TypeScript and Redux Toolkit. The backend is Node.js and Express with PostgreSQL, using JWT for authentication and bcrypt for passwords. It has 171 automated tests across the frontend and API."
+> The frontend uses React, TypeScript and Redux Toolkit. The backend is Node.js and Express with MongoDB and Mongoose, using JWT for authentication and bcrypt for passwords. It has 176 automated tests across the frontend and API."
 
 If asked what was hardest, these are true examples:
 - Stopping older responses from overwriting newer ones when users clicked quickly.
@@ -121,11 +122,11 @@ If asked what was hardest, these are true examples:
 ## For your resume
 
 > **MiniDesk: Support Ticket Management System** | [github.com/REETHU-JUSTIN/minidesk](https://github.com/REETHU-JUSTIN/minidesk)
-> *React, TypeScript, Redux Toolkit, Node.js, Express, PostgreSQL, JWT*
-> - Developed a full-stack support ticket system with customer, agent and admin roles, enforcing permissions on the server at route and record level.
+> *MongoDB, Express, React, Node.js, TypeScript, Redux Toolkit, JWT*
+> - Developed a MERN stack support ticket system with customer, agent and admin roles, enforcing permissions on the server at route and record level.
 > - Built REST APIs with JWT authentication, bcrypt password hashing, request validation, rate limiting and centralized error handling.
-> - Designed a PostgreSQL schema for users, tickets and comments, using parameterized SQL with joins, aggregation and pagination.
+> - Designed MongoDB schemas with Mongoose, using embedded comments, references with populate, aggregation pipelines and indexes.
 > - Created a responsive React interface with search, filters and a dashboard, using Redux Toolkit, the Context API and Axios interceptors.
-> - Wrote 171 automated tests with Vitest, React Testing Library and Supertest, and verified they catch deliberately introduced bugs.
+> - Wrote 176 automated tests with Vitest, React Testing Library and Supertest, and verified they catch deliberately introduced bugs.
 
 Don't add "deployed" or "Docker" to this until they're true. If you deploy it, add the live link.

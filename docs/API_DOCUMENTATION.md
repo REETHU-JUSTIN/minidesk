@@ -2,7 +2,7 @@
 
 The API runs at `http://localhost:5000/api`. Data is sent and received as JSON.
 
-Data is stored in PostgreSQL, and the frontend calls this API through `frontend/src/services/`.
+Data is stored in MongoDB, and the frontend calls this API through `frontend/src/services/`. IDs are MongoDB ObjectIds, sent as 24-character text.
 
 ## Run it
 
@@ -10,7 +10,7 @@ Data is stored in PostgreSQL, and the frontend calls this API through `frontend/
 cd backend
 npm install
 cp .env.example .env    # then fill in the values
-npm run db:reset        # creates the database and sample data
+npm run db:reset        # loads the sample data
 npm run dev
 ```
 

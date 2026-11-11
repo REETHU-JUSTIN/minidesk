@@ -9,7 +9,7 @@ import { CommentList } from './CommentList'
 
 // Comments use local state, not Redux, because only this one component needs them.
 // Not everything belongs in global state.
-export function TicketComments({ ticketId }: { ticketId: number }) {
+export function TicketComments({ ticketId }: { ticketId: string }) {
   const [comments, setComments] = useState<TicketComment[] | null>(null)
   const [error, setError] = useState('')
 

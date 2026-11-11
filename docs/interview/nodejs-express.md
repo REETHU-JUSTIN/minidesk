@@ -20,14 +20,14 @@ MiniDesk's whole backend runs on Node. `server.ts` starts it, handlers are `asyn
 
 ```ts
 async function start() {
-  await pool.query('SELECT 1')
+  await connectDatabase()
 ```
 
 ```ts
 const server = app.listen(env.port, (error) => {
 ```
 
-- `await` confirms the database is reachable before the server accepts requests.
+- `await` connects to the database before the server accepts requests.
 - `listen` starts the server. The callback runs when it's ready, or receives an error, for example if the port is taken.
 
 **File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
@@ -201,7 +201,7 @@ export const getTicket: RequestHandler = async (req, res) => {
 **File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
 
 ```ts
-export async function getTicket(user: PublicUser, ticketId: number): Promise<Ticket> {
+export async function getTicket(user: PublicUser, ticketId: string): Promise<Ticket> {
   return requireVisibleTicket(user, ticketId)
 }
 ```
@@ -210,7 +210,7 @@ export async function getTicket(user: PublicUser, ticketId: number): Promise<Tic
 
 ### 4. Why We Used It
 
-Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: when I moved from temporary in-memory data to PostgreSQL, the queries all went into services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
+Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: when I changed the database, first to PostgreSQL and later to MongoDB, the queries all went into services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
 
 ### 5. Real-Time Scenario
 
@@ -249,7 +249,7 @@ In layers: `routes`, `middleware`, `controllers`, `services`, plus `config` and 
 
 ### 8. Follow-up Questions
 
-- **Why does `parseId` exist?** URL parameters are always text, and clients can send anything, so IDs are converted and checked.
+- **Why does `parseId` exist?** Clients can send anything in a URL, so IDs are checked before they reach the database.
 - **Where do you use `try`/`catch` then?** Where I want to handle a specific failure, such as `jwt.verify` in `authenticate`.
 - **Why not a bigger framework like NestJS?** Express keeps every step visible, which suits learning and a project this size.
 
@@ -511,7 +511,7 @@ Frontend checks only help honest users, because anyone can call the API with Pos
 When a server copies all client fields into a record, letting someone set fields like `role`. My validators build new objects with only allowed fields.
 
 **What is injection?**
-When input is treated as code or query syntax. I check types strictly, so objects sent in place of strings are rejected, and parameterized SQL queries stop SQL injection.
+When input is treated as code or query syntax. I check types strictly, so objects sent in place of strings are rejected, so query operators can't be injected into MongoDB.
 
 **How did you implement validation?**
 Validator functions return clean data or field errors, and `validateBody` middleware applies them, returning 400 with errors per field.

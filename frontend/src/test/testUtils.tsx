@@ -10,23 +10,23 @@ import dashboardReducer from '../features/dashboard/dashboardSlice'
 import ticketsReducer from '../features/tickets/ticketsSlice'
 import type { Ticket, User } from '../types'
 
-export const adminUser: User = { id: 1, name: 'Alex Morgan', email: 'admin@example.com', role: 'admin', createdAt: '2026-09-01T12:00:00.000Z' }
-export const agentUser: User = { id: 2, name: 'Sam Carter', email: 'sam@example.com', role: 'agent', createdAt: '2026-09-03T12:00:00.000Z' }
-export const customerUser: User = { id: 4, name: 'Priya Nair', email: 'priya@example.com', role: 'customer', createdAt: '2026-10-02T12:00:00.000Z' }
+export const adminUser: User = { id: 'user-1', name: 'Alex Morgan', email: 'admin@example.com', role: 'admin', createdAt: '2026-09-01T12:00:00.000Z' }
+export const agentUser: User = { id: 'user-2', name: 'Sam Carter', email: 'sam@example.com', role: 'agent', createdAt: '2026-09-03T12:00:00.000Z' }
+export const customerUser: User = { id: 'user-4', name: 'Priya Nair', email: 'priya@example.com', role: 'customer', createdAt: '2026-10-02T12:00:00.000Z' }
 
 // Builds a ticket, so each test only has to state the fields it cares about.
 export function makeTicket(overrides: Partial<Ticket> = {}): Ticket {
   return {
-    id: 1006,
+    id: '000000000000000000001006',
     title: 'App crashes when uploading a file',
     description: 'The app closes without an error message.',
     category: 'technical',
     priority: 'high',
     status: 'in_progress',
-    customerId: 4,
+    customerId: 'user-4',
     customerName: 'Priya Nair',
     customerEmail: 'priya@example.com',
-    assignedAgentId: 3,
+    assignedAgentId: 'user-3',
     assignedAgentName: 'Maya Lee',
     createdAt: '2026-11-01T12:00:00.000Z',
     updatedAt: '2026-11-01T15:40:00.000Z',

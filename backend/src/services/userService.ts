@@ -1,11 +1,8 @@
-import { pool } from '../config/db'
+import { User } from '../models/User'
 import type { PublicUser, UserRole } from '../types'
-import { PUBLIC_USER_COLUMNS } from './authService'
+import { toPublicUser } from './authService'
 
 export async function listUsers(role?: UserRole): Promise<PublicUser[]> {
-  const result = await pool.query<PublicUser>(
-    `SELECT ${PUBLIC_USER_COLUMNS} FROM users WHERE ($1::text IS NULL OR role = $1) ORDER BY id`,
-    [role ?? null],
-  )
-  return result.rows
+  const users = await User.find(role ? { role } : {}).sort({ createdAt: 1, _id: 1 })
+  return users.map(toPublicUser)
 }

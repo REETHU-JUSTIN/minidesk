@@ -15,7 +15,7 @@ describe('validateRegister', () => {
     expect(validateRegister({ name: 'Test Person', email: 'test@example.com', password: 'é'.repeat(40) }).ok).toBe(false)
   })
 
-  it('removes null characters, which PostgreSQL refuses', () => {
+  it('removes null characters', () => {
     const result = validateRegister({ name: 'Nul\0Name', email: 'test@example.com', password: 'long-enough' })
 
     expect(result).toMatchObject({ ok: true, data: { name: 'NulName' } })
@@ -27,7 +27,7 @@ describe('validateUpdateTicket', () => {
     expect(validateUpdateTicket({ assignedAgentId: null })).toEqual({ ok: true, data: { assignedAgentId: null } })
   })
 
-  it.each(['two', 1.5, -1, 99999999999])('rejects %s as an agent ID', (assignedAgentId) => {
+  it.each(['two', 1.5, -1, 99999999999, 'a'.repeat(23)])('rejects %s as an agent ID', (assignedAgentId) => {
     expect(validateUpdateTicket({ assignedAgentId }).ok).toBe(false)
   })
 
@@ -47,11 +47,11 @@ describe('validateComment', () => {
 })
 
 describe('parseId', () => {
-  it('accepts the largest ID the database can hold', () => {
-    expect(parseId('2147483647')).toBe(2147483647)
+  it('accepts a MongoDB ObjectId', () => {
+    expect(parseId('65f1a2b3c4d5e6f708192a3b')).toBe('65f1a2b3c4d5e6f708192a3b')
   })
 
-  it.each(['abc', '0', '-1', '1.5', '2147483648'])('rejects %s', (value) => {
+  it.each(['abc', '0', '1006', 'g'.repeat(24), 'a'.repeat(25)])('rejects %s', (value) => {
     expect(() => parseId(value)).toThrow(AppError)
   })
 })

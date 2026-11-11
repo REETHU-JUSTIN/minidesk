@@ -12,7 +12,7 @@ Fast hashes aren't suitable, because attackers can try billions of guesses per s
 
 ### 2. Project Implementation
 
-`authService.ts` hashes on sign-up and compares on login. Only the login query reads the hash, and every other query lists safe columns by name.
+`authService.ts` hashes on sign-up and compares on login. Only the login query reads the hash, because the schema hides it from every other query.
 
 ### 3. Code Reference
 
@@ -27,21 +27,21 @@ const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 ```
 
 ```ts
-const passwordMatches = await bcrypt.compare(password, foundUser?.passwordHash ?? unusedPasswordHash)
+const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? unusedPasswordHash)
 ```
 
 ```ts
-export const PUBLIC_USER_COLUMNS = 'id, name, email, role, created_at AS "createdAt"'
+return { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt.toISOString() }
 ```
 
 ```ts
-const { passwordHash: _passwordHash, ...user } = foundUser
+const user = await User.findOne({ email }).select('+passwordHash')
 ```
 
 - Each increase in rounds doubles the work.
 - When an email doesn't exist, `compare` still runs against a dummy hash, so response time doesn't reveal which emails have accounts.
-- Queries list safe columns by name, so `password_hash` can't be returned by accident.
-- Login is the one query that needs the hash, and rest syntax removes it before the user is returned.
+- `toPublicUser` builds a new object with only safe fields, so a hash can't slip through.
+- The schema hides the hash with `select: false`. Login is the one query that asks for it.
 
 ### 4. Why We Used It
 
@@ -74,7 +74,7 @@ It's designed to be fast, which helps attackers. bcrypt is slow on purpose and i
 As bcrypt hashes with 10 rounds. Plain passwords exist only briefly in memory during a request.
 
 **How do you keep hashes from the client?**
-My queries list safe columns by name instead of using `SELECT *`, and login removes the hash before returning the user. My tests scan every API response for anything that looks like a hash, and found none.
+The schema hides the field with `select: false`, and every user passes through `toPublicUser`, which picks only safe fields. My tests scan every API response for anything that looks like a hash, and found none.
 
 ### 8. Follow-up Questions
 
@@ -103,7 +103,7 @@ It has three parts: `header.payload.signature`. Anyone can read the header and p
 **File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
 
 ```ts
-return jwt.sign({}, env.jwtSecret, { subject: String(userId), expiresIn: env.jwtExpiresIn, algorithm: 'HS256' })
+return jwt.sign({}, env.jwtSecret, { subject: userId, expiresIn: env.jwtExpiresIn, algorithm: 'HS256' })
 ```
 
 - The token holds only the user's ID and timestamps, because anyone can read it.
@@ -119,7 +119,7 @@ const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
 ```
 
 ```ts
-const user = Number.isInteger(userId) ? await getUserById(userId) : null
+const user = isValidId(userId) ? await getUserById(userId) : null
 ```
 
 ```ts
@@ -206,7 +206,7 @@ ticketRoutes.delete('/:id', authorize('admin'), ticketController.deleteTicket)
 **File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
 
 ```ts
-if (!ticket || (user.role === 'customer' && ticket.customerId !== user.id)) {
+if (!record || (user.role === 'customer' && record.customer._id.toString() !== user.id)) {
   throw new AppError(404, 'We couldn\'t find that ticket.')
 }
 ```
@@ -264,4 +264,4 @@ In `requireVisibleTicket`, which reads, updates, deletes and comments all go thr
 
 - **Why does the comment author come from the token, not the request?** Otherwise anyone could post as anyone. My validator drops a sent `userId`, and a test confirmed this.
 - **How would you add a new role?** Add it to the union type, then to the `authorize` calls and service rules. TypeScript helps find the places.
-- **Should rules live in the database?** Filtering there is efficient, and my ticket list does that with a `WHERE` clause on the customer, though the app still decides what's allowed.
+- **Should rules live in the database?** Filtering there is efficient, and my ticket list does that by adding the customer to its query filter, though the app still decides what's allowed.

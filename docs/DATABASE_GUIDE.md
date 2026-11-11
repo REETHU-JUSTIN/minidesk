@@ -1,11 +1,13 @@
 # MiniDesk Database Guide
 
-MiniDesk stores its data in PostgreSQL, in three related tables. The definitions are in [schema.sql](../database/schema.sql), and sample data is in [seed.sql](../database/seed.sql).
+MiniDesk stores its data in MongoDB, using Mongoose. The schemas are in [backend/src/models](../backend/src/models), and the sample data is in [sampleData.ts](../backend/src/scripts/sampleData.ts).
+
+The project was first built on PostgreSQL. That version is saved under the Git tag `postgres-version`, and its SQL is in [examples/postgresql](../examples/postgresql/README.md).
 
 ## Set it up
 
-1. Make sure PostgreSQL is running.
-2. In `backend/.env`, set `DB_PASSWORD`, and `DB_PORT` if yours isn't 5432.
+1. Make sure MongoDB is running.
+2. In `backend/.env`, set `MONGODB_URI`, for example `mongodb://localhost:27017/minidesk`.
 3. Run:
 
 ```bash
@@ -13,9 +15,9 @@ cd backend
 npm run db:reset
 ```
 
-This creates the `minidesk` database if needed, and rebuilds its tables and sample data.
+This loads the sample data into that database.
 
-**Warning:** `db:reset` deletes all data in that database. It refuses to run when `NODE_ENV` is `production`.
+**Warning:** `db:reset` deletes all users and tickets in that database. It refuses to run when `NODE_ENV` is `production`, and on any database whose name doesn't start with `minidesk`, so other projects on the same server are safe.
 
 ## Sample accounts
 
@@ -27,75 +29,89 @@ All of them use the password `MiniDesk-Demo-2026`. These are for local developme
 | `sam@example.com`, `maya@example.com` | Agent |
 | `priya@example.com`, `liam@example.com`, `noah@example.com` | Customer |
 
-## ER diagram
+## Collections
 
 ```mermaid
 erDiagram
-    users ||--o{ tickets : "creates (customer_id)"
-    users |o--o{ tickets : "is assigned (assigned_agent_id)"
+    users ||--o{ tickets : "creates (customer)"
+    users |o--o{ tickets : "is assigned (assignedAgent)"
+    tickets ||--o{ comments : "embeds"
     users ||--o{ comments : writes
-    tickets ||--o{ comments : has
     users {
-        int id PK
-        text name
-        text email UK
-        text password_hash
-        text role
-        timestamptz created_at
+        ObjectId _id
+        string name
+        string email "unique, lowercase"
+        string passwordHash "hidden by default"
+        string role
+        date createdAt
     }
     tickets {
-        int id PK
-        text title
-        text description
-        text category
-        text priority
-        text status
-        int customer_id FK
-        int assigned_agent_id FK
-        timestamptz created_at
-        timestamptz updated_at
+        ObjectId _id
+        string title
+        string description
+        string category
+        string priority
+        string status
+        ObjectId customer
+        ObjectId assignedAgent "or null"
+        array comments "embedded"
+        date createdAt
+        date updatedAt
     }
     comments {
-        int id PK
-        int ticket_id FK
-        int user_id FK
-        text message
-        timestamptz created_at
+        ObjectId _id
+        ObjectId author
+        string message
+        date createdAt
     }
 ```
 
-## How the tables relate
+A ticket looks like this in the database:
 
-| Relationship | Type | What happens on delete |
+```json
+{
+  "_id": "000000000000000000001006",
+  "title": "App crashes when uploading a file",
+  "status": "in_progress",
+  "priority": "high",
+  "customer": "000000000000000000000004",
+  "assignedAgent": "000000000000000000000003",
+  "comments": [
+    { "_id": "...", "author": "000000000000000000000004", "message": "It happens every time..." }
+  ]
+}
+```
+
+## Why it's designed this way
+
+| Data | Design | Reason |
 |---|---|---|
-| A customer creates tickets | One-to-many | `RESTRICT`: a customer who has tickets can't be deleted |
-| An agent is assigned tickets | One-to-many, optional | `SET NULL`: their tickets become unassigned |
-| A ticket has comments | One-to-many | `CASCADE`: deleting a ticket deletes its comments |
-| A user writes comments | One-to-many | `RESTRICT`: a user who has comments can't be deleted |
+| Comments | Embedded in the ticket | They belong to one ticket and are read with it. Deleting a ticket removes them automatically |
+| Customer and agent | Referenced by ID | Users are shared by many tickets. A changed name updates everywhere |
 
-`tickets` points to `users` twice, so ticket queries join `users` twice, under the names `customer` and `agent`.
+## Rules
 
-## Data rules
+Mongoose schemas enforce these before saving:
 
-The database enforces these itself, so bad data is refused even if the application has a bug.
+- **Required fields**, and allowed values with `enum` for role, category, priority and status.
+- **Text lengths** for names, titles, descriptions and comments.
+- **Lowercase emails.**
 
-- **`CHECK`:** allowed values for role, category, priority and status, plus text lengths and lowercase emails.
-- **`UNIQUE`:** no two users can share an email.
-- **`NOT NULL`:** required fields must have a value. Only `assigned_agent_id` can be empty.
-- **`FOREIGN KEY`:** a ticket can't point to a user who doesn't exist.
+The **unique index** on `email` is enforced by MongoDB itself.
+
+**What the database doesn't enforce:** unlike SQL foreign keys, MongoDB doesn't check that a ticket's `customer` or `assignedAgent` exists. The API checks this in its services. MiniDesk has no way to delete users, so references can't be left dangling.
 
 ## Indexes
 
 | Index | Speeds up |
 |---|---|
-| `users.email` (from `UNIQUE`) | Login |
+| `users.email` (unique) | Login |
 | `tickets.status`, `tickets.priority` | Filters |
-| `tickets.customer_id` | A customer's own tickets |
-| `tickets.assigned_agent_id` | An agent's own tickets |
-| `tickets.created_at` | Sorting newest first |
-| `comments.ticket_id` | Loading a ticket's comments |
+| `tickets.customer` | A customer's own tickets |
+| `tickets.assignedAgent` | An agent's own tickets |
+| `tickets.createdAt`, `tickets.updatedAt` | Sorting |
 
-Searching titles with `ILIKE '%text%'` can't use a normal index. That's fine at this size, and a larger app would use PostgreSQL's full-text search or a trigram index.
+Searching titles with a case-insensitive pattern can't use a normal index well. That's fine at this size, and a larger app would use a text index or Atlas Search.
 
 ## Main queries
 
@@ -103,38 +119,24 @@ Searching titles with `ILIKE '%text%'` can't use a normal index. That's fine at 
 
 From [ticketService.ts](../backend/src/services/ticketService.ts):
 
-```sql
-SELECT t.id, t.title, customer.name AS "customerName", agent.name AS "assignedAgentName"
-FROM tickets t
-JOIN users customer ON customer.id = t.customer_id
-LEFT JOIN users agent ON agent.id = t.assigned_agent_id;
+```ts
+TicketModel.find(filter).select('-comments').sort({ createdAt: -1 }).populate(PEOPLE)
 ```
 
-`LEFT JOIN` keeps tickets with no agent. A plain `JOIN` would silently hide them.
+`populate` replaces each stored user ID with that user's name and email.
 
 ### Dashboard counts
 
-From [dashboardService.ts](../backend/src/services/dashboardService.ts):
-
-```sql
-SELECT
-  COUNT(*)::int AS total,
-  COUNT(*) FILTER (WHERE status = 'open')::int AS open
-FROM tickets;
-```
-
-One query calculates all the numbers, instead of one query for each.
+From [dashboardService.ts](../backend/src/services/dashboardService.ts): one aggregation pipeline, with `$match`, then `$group` using `$sum` and `$cond`, calculates all four numbers.
 
 ## Try it
 
-Open `psql`, or pgAdmin, and connect to the `minidesk` database. Your port depends on which server you chose:
+In **MongoDB Compass**, or `mongosh`, connect to `mongodb://localhost:27017`, and open the `minidesk` database.
 
-```bash
-psql -h localhost -p 5432 -U postgres -d minidesk
-```
-
-```sql
-SELECT * FROM tickets WHERE status = 'open';
-SELECT u.name, COUNT(t.id) AS tickets FROM users u JOIN tickets t ON t.customer_id = u.id GROUP BY u.name;
-EXPLAIN SELECT * FROM tickets WHERE customer_id = 4;
+```js
+use minidesk
+db.tickets.find({ status: 'open' })
+db.tickets.countDocuments({ priority: 'high' })
+db.tickets.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }])
+db.tickets.find({ status: 'open' }).explain('executionStats')
 ```

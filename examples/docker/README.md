@@ -19,7 +19,7 @@ These use MiniDesk's files. Run them from the project folder after installing Do
 | Stop Compose, keeping data | `docker compose down` |
 | Stop Compose, deleting data | `docker compose down -v` |
 
-With `--env-file backend/.env`, the database host `localhost` would mean the container itself, not your computer. On Docker Desktop, use `host.docker.internal` as `DB_HOST` to reach PostgreSQL installed on your computer.
+With `--env-file backend/.env`, `localhost` in `MONGODB_URI` would mean the container itself, not your computer. On Docker Desktop, use `host.docker.internal` in its place to reach MongoDB installed on your computer.
 
 ---
 
@@ -58,7 +58,7 @@ COPY backend/ ./
 **File:** [docker-compose.yml](../../docker-compose.yml)
 
 ```yaml
-- db-data:/var/lib/postgresql/data
+- db-data:/data/db
 ```
 
 ### 4. Why Use It

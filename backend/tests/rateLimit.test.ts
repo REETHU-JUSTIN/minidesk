@@ -1,5 +1,5 @@
-import { afterAll, describe, expect, it, vi } from 'vitest'
-import { api, closeDatabase, DEMO_PASSWORD } from './helpers'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { api, closeDatabase, DEMO_PASSWORD, resetData } from './helpers'
 
 // The limit is read when the app first loads. vi.hoisted runs before the imports above,
 // so the app sees this low limit. Each test file loads its own copy of the app,
@@ -8,6 +8,7 @@ vi.hoisted(() => {
   process.env.LOGIN_ATTEMPT_LIMIT = '3'
 })
 
+beforeAll(resetData)
 afterAll(closeDatabase)
 
 const login = (password: string) => api.post('/api/auth/login').send({ email: 'admin@example.com', password })

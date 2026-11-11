@@ -1,6 +1,6 @@
 # MongoDB: CRUD and Aggregation
 
-**Tested:** both scripts ran correctly against a temporary MongoDB server. MiniDesk itself uses PostgreSQL, not MongoDB.
+**Tested:** both scripts ran correctly against a temporary MongoDB server. These use the plain MongoDB driver, while MiniDesk uses Mongoose, so you can compare the two. MiniDesk's own design is explained in [MongoDB and Mongoose](../../docs/interview/mongodb.md).
 
 ## Run it
 
@@ -34,7 +34,7 @@ MongoDB is a **document database**. Instead of tables with fixed columns, it sto
 
 ### 2. Project Implementation
 
-`crud.js` stores MiniDesk-style tickets with the customer and comments **embedded** inside each ticket. In MiniDesk, those are separate PostgreSQL tables joined together.
+`crud.js` stores MiniDesk-style tickets with the customer and comments **embedded** inside each ticket. MiniDesk embeds comments too, but references customers.
 
 ### 3. Code Reference
 
@@ -54,7 +54,7 @@ await tickets.updateOne({ ticketNumber: 1001 }, { $push: { comments: { author: '
 
 - A filter is an object, and operators start with `$`.
 - Dot notation, as in `'customer.email'`, reaches into nested objects.
-- `$push` adds to an array inside the document. In MiniDesk, that's an `INSERT` into the `comments` table.
+- `$push` adds to an array inside the document, which is how MiniDesk adds comments.
 - Without `$set`, `updateOne` would replace the whole document.
 
 ### 4. Why Use It
@@ -63,14 +63,14 @@ A document can match how the app uses its data, so reading a ticket with its com
 
 ### 5. Real-Time Scenario
 
-If MiniDesk used MongoDB, opening a ticket would read one document, already containing its comments. The trade-off: if a customer changed their name, every ticket with a copy of that name would need updating, whereas PostgreSQL stores the name once.
+With this script's design, opening a ticket reads one document, already containing its comments and customer. The trade-off: if a customer changed their name, every ticket with a copy of that name would need updating. That's why MiniDesk embeds comments, but references customers by ID.
 
 ### 6. Interview Questions
 
 - **Theory:** What's the difference between SQL and NoSQL databases?
 - **Theory:** When would you embed data, and when would you reference it?
-- **Practical:** Why does MiniDesk use PostgreSQL rather than MongoDB?
-- **Practical:** How would you model MiniDesk's tickets in MongoDB?
+- **Practical:** Why did you convert MiniDesk from PostgreSQL to MongoDB?
+- **Practical:** What's the difference between the MongoDB driver and Mongoose?
 
 ### 7. Project-Based Answers
 
@@ -80,11 +80,11 @@ SQL databases use tables with a fixed schema, relationships and joins, and stron
 **Embed or reference?**
 Embed data that's read together and owned by the parent, like a ticket's comments. Reference data that's shared or grows without limit, like users. My aggregation example references agents by ID, then joins them with `$lookup`.
 
-**Why PostgreSQL for MiniDesk?**
-The data is clearly relational: users, tickets and comments linked by foreign keys. I wanted constraints and transactions, and the dashboard and permissions rely on joins and aggregation that SQL does naturally.
+**Why did you convert it?**
+I'm focusing on the MERN stack, so I wanted real MongoDB experience. Building the same features on both databases taught me the trade-offs: PostgreSQL enforced relationships for me, while MongoDB let me embed comments and needed the code to check references.
 
-**How would you model it in MongoDB?**
-Tickets as documents with embedded comments, and users in their own collection. I'd store the customer's ID on each ticket, and possibly a copy of their name for fast display, accepting that the copy needs updating if the name changes.
+**Driver versus Mongoose?**
+The driver, used in these scripts, talks to MongoDB directly with no schema. Mongoose adds schemas, validation and `populate`, which MiniDesk uses.
 
 ### 8. Follow-up Questions
 
@@ -112,7 +112,7 @@ An aggregation **pipeline** is a list of stages. Each stage transforms the docum
 
 ### 2. Project Implementation
 
-`aggregation.js` recreates MiniDesk queries in MongoDB: counts by status, the dashboard numbers, agent workload with names joined in, and a page of tickets with a total.
+`aggregation.js` runs MiniDesk-style reports with the plain driver: counts by status, the dashboard numbers, agent workload with names joined in, and a page of tickets with a total.
 
 ### 3. Code Reference
 
@@ -131,7 +131,7 @@ open: { $sum: { $cond: [{ $eq: ['$status', 'open'] }, 1, 0] } },
 ```
 
 - `_id` in `$group` is what to group by. `$status` with a `$` means "the value of the status field".
-- `$cond` adds 1 only for matching documents. MiniDesk does the same with `COUNT(*) FILTER (WHERE ...)`.
+- `$cond` adds 1 only for matching documents. MiniDesk's dashboard works the same way.
 - `$lookup` always produces an array, which `$unwind` then flattens.
 
 ### 4. Why Use It
@@ -146,7 +146,7 @@ To show each agent's workload, the pipeline filters out resolved tickets, groups
 
 - **Theory:** What is an aggregation pipeline?
 - **Theory:** Why does stage order matter?
-- **Practical:** Translate MiniDesk's dashboard query into an aggregation.
+- **Practical:** How would you calculate MiniDesk's dashboard numbers with an aggregation?
 
 ### 7. Project-Based Answers
 
@@ -157,7 +157,7 @@ A sequence of stages that each transform documents. It's MongoDB's equivalent of
 Each stage only sees the previous stage's output. Putting `$match` first reduces the documents everything else processes, and can use an index.
 
 **Translate the dashboard query.**
-One `$group` with `_id: null`, so all documents form a single group, and a `$sum` of `$cond` for each status. My example returns the same four numbers MiniDesk's SQL query does.
+One `$group` with `_id: null`, so all documents form a single group, and a `$sum` of `$cond` for each status. MiniDesk's `dashboardService.ts` does this.
 
 ### 8. Follow-up Questions
 

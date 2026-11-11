@@ -28,12 +28,12 @@ describe('TicketListPage', () => {
       expect(screen.getByText('Loading tickets...')).toBeInTheDocument()
 
       const row = (await screen.findByText('App crashes when uploading a file')).closest('tr') as HTMLElement
-      expect(within(row).getByText('#1006')).toBeInTheDocument()
+      expect(within(row).getByText('#001006')).toBeInTheDocument()
       expect(within(row).getByText('Priya Nair')).toBeInTheDocument()
       expect(within(row).getByText('Maya Lee')).toBeInTheDocument()
       expect(within(row).getByText('High')).toBeInTheDocument()
       expect(within(row).getByText('In Progress')).toBeInTheDocument()
-      expect(within(row).getByRole('link', { name: 'View' })).toHaveAttribute('href', '/tickets/1006')
+      expect(within(row).getByRole('link', { name: 'View' })).toHaveAttribute('href', '/tickets/000000000000000000001006')
     })
 
     it('shows "Unassigned" for a ticket with no agent', async () => {

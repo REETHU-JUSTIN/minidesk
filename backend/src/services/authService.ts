@@ -1,48 +1,43 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { pool } from '../config/db'
+import type { HydratedDocument } from 'mongoose'
 import { env } from '../config/env'
+import { User } from '../models/User'
+import type { UserRecord } from '../models/User'
 import type { LoginInput, PublicUser, RegisterInput } from '../types'
 import { AppError } from '../utils/AppError'
 
 // Higher is slower for attackers, and for us. 10 is a common starting point.
 const SALT_ROUNDS = 10
 
-// PostgreSQL's error code for breaking a UNIQUE rule.
-const UNIQUE_VIOLATION = '23505'
+// MongoDB's error code for breaking a unique index.
+const DUPLICATE_KEY = 11000
 
 // Compared against when an email doesn't exist, so that a login takes about the same
 // time either way. Otherwise response times would reveal which emails have accounts.
 const unusedPasswordHash = bcrypt.hashSync('not-a-real-password', SALT_ROUNDS)
 
-// Listing columns by name means a query can't return password_hash by accident.
-// AS "createdAt" renames database naming to the names the API uses.
-export const PUBLIC_USER_COLUMNS = 'id, name, email, role, created_at AS "createdAt"'
+// Every user leaving a service passes through here, so a password hash can't leak.
+export function toPublicUser(user: HydratedDocument<UserRecord>): PublicUser {
+  return { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt.toISOString() }
+}
 
-function createToken(userId: number): string {
+function createToken(userId: string): string {
   // "sub" (subject) is the standard field for who a token belongs to.
   // A token can be read by anyone, so it must never contain anything secret.
-  return jwt.sign({}, env.jwtSecret, { subject: String(userId), expiresIn: env.jwtExpiresIn, algorithm: 'HS256' })
+  return jwt.sign({}, env.jwtSecret, { subject: userId, expiresIn: env.jwtExpiresIn, algorithm: 'HS256' })
 }
 
 export async function register({ name, email, password }: RegisterInput) {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 
   try {
-    // $1, $2 and $3 are parameters. The values travel separately from the SQL,
-    // so text from a user can never run as SQL. This is what stops SQL injection.
-    const result = await pool.query<PublicUser>(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES ($1, $2, $3, 'customer')
-       RETURNING ${PUBLIC_USER_COLUMNS}`,
-      [name, email, passwordHash],
-    )
-    const user = result.rows[0]
-    return { token: createToken(user.id), user }
+    const user = await User.create({ name, email, passwordHash, role: 'customer' })
+    return { token: createToken(user.id), user: toPublicUser(user) }
   } catch (error) {
     // Letting the database enforce uniqueness also covers two sign-ups arriving at once,
     // which checking first and inserting afterward wouldn't.
-    if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
+    if ((error as { code?: number }).code === DUPLICATE_KEY) {
       throw new AppError(409, 'An account with this email already exists.')
     }
     throw error
@@ -50,24 +45,19 @@ export async function register({ name, email, password }: RegisterInput) {
 }
 
 export async function login({ email, password }: LoginInput) {
-  const result = await pool.query<PublicUser & { passwordHash: string }>(
-    `SELECT ${PUBLIC_USER_COLUMNS}, password_hash AS "passwordHash" FROM users WHERE email = $1`,
-    [email],
-  )
-  const foundUser = result.rows[0]
-  const passwordMatches = await bcrypt.compare(password, foundUser?.passwordHash ?? unusedPasswordHash)
+  // The hash is hidden by default, so this is the one query that asks for it.
+  const user = await User.findOne({ email }).select('+passwordHash')
+  const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? unusedPasswordHash)
 
   // The same message for both cases, so nobody can find out which emails are registered.
-  if (!foundUser || !passwordMatches) {
+  if (!user || !passwordMatches) {
     throw new AppError(401, 'The email or password is incorrect.')
   }
 
-  // Rest syntax separates the hash from everything else, so it can't reach the response.
-  const { passwordHash: _passwordHash, ...user } = foundUser
-  return { token: createToken(user.id), user }
+  return { token: createToken(user.id), user: toPublicUser(user) }
 }
 
-export async function getUserById(userId: number): Promise<PublicUser | null> {
-  const result = await pool.query<PublicUser>(`SELECT ${PUBLIC_USER_COLUMNS} FROM users WHERE id = $1`, [userId])
-  return result.rows[0] ?? null
+export async function getUserById(userId: string): Promise<PublicUser | null> {
+  const user = await User.findById(userId)
+  return user ? toPublicUser(user) : null
 }

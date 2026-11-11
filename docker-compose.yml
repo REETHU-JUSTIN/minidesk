@@ -6,16 +6,15 @@
 
 services:
   db:
-    image: postgres:17-alpine
+    image: mongo:8
     environment:
-      POSTGRES_DB: minidesk
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      MONGO_INITDB_ROOT_USERNAME: minidesk
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}
     volumes:
       # Keeps the data when the container is removed or rebuilt.
-      - db-data:/var/lib/postgresql/data
+      - db-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d minidesk"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,18 +26,14 @@ services:
     environment:
       PORT: 5000
       # Containers find each other by service name, so the database's address is "db".
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: minidesk
-      DB_USER: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      MONGODB_URI: mongodb://minidesk:${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}@db:27017/minidesk?authSource=admin
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       CLIENT_ORIGIN: http://localhost:8080
     ports:
       - "5000:5000"
     depends_on:
       db:
-        # Waits until PostgreSQL accepts connections, not just until its container starts.
+        # Waits until MongoDB accepts connections, not just until its container starts.
         condition: service_healthy
 
   web:

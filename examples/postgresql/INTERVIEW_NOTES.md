@@ -1,5 +1,7 @@
 # PostgreSQL and SQL
 
+**These notes describe MiniDesk's original PostgreSQL version**, which is saved under the Git tag `postgres-version`. The current app uses MongoDB. Keep these for interviews that ask about SQL, and describe them as an earlier version of the project.
+
 ---
 
 ## Relational Schema Design
@@ -10,11 +12,11 @@ A relational database stores data in tables of rows and columns. Each row has a 
 
 ### 2. Project Implementation
 
-MiniDesk has three tables: `users`, `tickets` and `comments`. A ticket stores its customer's ID rather than their name, so a changed name only needs updating in one place. See the [database guide](../DATABASE_GUIDE.md) for the diagram.
+MiniDesk has three tables: `users`, `tickets` and `comments`. A ticket stores its customer's ID rather than their name, so a changed name only needs updating in one place. See the [database guide](schema.sql) for the diagram.
 
 ### 3. Code Reference
 
-**File:** [database/schema.sql](../../database/schema.sql)
+**File:** [schema.sql](schema.sql)
 
 ```sql
 id                INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 1001) PRIMARY KEY,
@@ -101,7 +103,7 @@ Every table uses them for required fields, allowed values and text lengths. `use
 
 ### 3. Code Reference
 
-**File:** [database/schema.sql](../../database/schema.sql)
+**File:** [schema.sql](schema.sql)
 
 ```sql
 email         TEXT NOT NULL UNIQUE CHECK (email = lower(email)),
@@ -111,7 +113,7 @@ email         TEXT NOT NULL UNIQUE CHECK (email = lower(email)),
 status            TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved')),
 ```
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [minidesk-sql/authService.ts](minidesk-sql/authService.ts)
 
 ```ts
 if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
@@ -178,7 +180,7 @@ A join combines rows from two tables, based on a related column.
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [minidesk-sql/ticketService.ts](minidesk-sql/ticketService.ts)
 
 ```ts
 FROM tickets t
@@ -244,7 +246,7 @@ Aggregate functions calculate one value from many rows: `COUNT`, `SUM`, `AVG`, `
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/dashboardService.ts](../../backend/src/services/dashboardService.ts)
+**File:** [minidesk-sql/dashboardService.ts](minidesk-sql/dashboardService.ts)
 
 ```ts
 COUNT(*)::int AS total,
@@ -308,7 +310,7 @@ Primary keys and `UNIQUE` columns get indexes automatically. I added six more, f
 
 ### 3. Code Reference
 
-**File:** [database/schema.sql](../../database/schema.sql)
+**File:** [schema.sql](schema.sql)
 
 ```sql
 CREATE INDEX idx_tickets_customer_id ON tickets (customer_id);
@@ -375,7 +377,7 @@ Every query uses `$1`-style parameters. The few parts built dynamically, like co
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [minidesk-sql/authService.ts](minidesk-sql/authService.ts)
 
 ```ts
 `SELECT ${PUBLIC_USER_COLUMNS}, password_hash AS "passwordHash" FROM users WHERE email = $1`,
@@ -385,7 +387,7 @@ Every query uses `$1`-style parameters. The few parts built dynamically, like co
 - `$1` is a placeholder, and the value travels separately.
 - `PUBLIC_USER_COLUMNS` is a fixed string from the code, not user input.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [minidesk-sql/ticketService.ts](minidesk-sql/ticketService.ts)
 
 ```ts
 const escapedSearch = search.replace(/[\\%_]/g, '\\$&')
@@ -452,7 +454,7 @@ Opening a database connection is slow, because it involves a network handshake a
 
 ### 3. Code Reference
 
-**File:** [backend/src/config/db.ts](../../backend/src/config/db.ts)
+**File:** [minidesk-sql/db.ts](minidesk-sql/db.ts)
 
 ```ts
 : { host: env.dbHost, port: env.dbPort, database: env.dbName, user: env.dbUser, password: env.dbPassword }),
@@ -462,7 +464,7 @@ Opening a database connection is slow, because it involves a network handshake a
 export const pool = new Pool(connectionConfig)
 ```
 
-- The settings come from either one hosted database address or separate local values. See [Docker and deployment](docker-deployment.md).
+- The settings come from either one hosted database address or separate local values. See [Docker and deployment](../../docs/interview/docker-deployment.md).
 
 ```ts
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (value) => new Date(value).toISOString())
@@ -470,14 +472,6 @@ types.setTypeParser(types.builtins.TIMESTAMPTZ, (value) => new Date(value).toISO
 
 - `pool.query` borrows a connection, runs the query and returns it automatically.
 - The type parser makes all timestamps ISO text, matching what the API promises.
-
-**File:** [backend/src/server.ts](../../backend/src/server.ts)
-
-```ts
-await pool.query('SELECT 1')
-```
-
-- A bad password gives a clear message at startup, rather than an error on the first request.
 
 ### 4. Why We Used It
 

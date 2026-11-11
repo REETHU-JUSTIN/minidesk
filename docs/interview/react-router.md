@@ -202,12 +202,11 @@ No. The code runs in the browser and can be changed, and anyone can call the API
 
 ```tsx
 const { ticketId } = useParams()
-const numericId = Number(ticketId)
 
-if (!Number.isInteger(numericId) || numericId <= 0) {
+if (!ticketId || !OBJECT_ID_PATTERN.test(ticketId)) {
 ```
 
-- `useParams` always returns text, and anyone can type anything into a URL, so the ID is converted and checked.
+- Anyone can type anything into a URL, so the ID's format is checked before making a request.
 
 **File:** [frontend/src/components/layout/TopNav.tsx](../../frontend/src/components/layout/TopNav.tsx)
 
@@ -250,7 +249,7 @@ Path parameters identify a thing, like a ticket. Query parameters modify a view,
 It swaps the current history entry instead of adding one. After deleting a ticket, I navigate with `replace`, so Back doesn't return to a page for a ticket that no longer exists.
 
 **How do you read an ID?**
-With `useParams`. It's always a string, so I convert it with `Number` and check it's a positive whole number.
+With `useParams`. It's always a string, so I check that it looks like a MongoDB ObjectId before requesting anything.
 
 **How does your top bar search work?**
 It navigates to the ticket list with `?search=` in the URL. `TicketListPage` reads it and uses it in the `key` for `TicketList`, so a new search gets a fresh component with that search text.
@@ -259,4 +258,4 @@ It navigates to the ticket list with `?search=` in the URL. `TicketListPage` rea
 
 - **Why are only searches in the URL, and not all filters?** To keep the code simple. Putting all filters there would make them shareable, and is a sensible next step.
 - **What if a customer changes the ID in the URL to someone else's ticket?** The API returns 404, and the page shows "We couldn't find that ticket." That's enforced on the server, so changing frontend code doesn't help.
-- **What does `Number('abc')` give?** `NaN`, and `Number.isInteger(NaN)` is false, so the check catches it.
+- **What happens with `/tickets/abc`?** It fails the format check, so the page shows "We couldn't find that ticket" without calling the API.

@@ -1,6 +1,6 @@
 # CI/CD Basics
 
-**Tested:** every command in the workflow ran successfully on a clean copy of MiniDesk, against a temporary PostgreSQL server. The workflow itself has **not** run on GitHub, because it isn't turned on.
+**Tested:** every command in the workflow ran successfully on a clean copy of MiniDesk, with the tests starting their own temporary MongoDB server. The workflow itself has **not** run on GitHub, because it isn't turned on.
 
 ## Turn it on
 
@@ -21,8 +21,8 @@ It's kept here rather than turned on, because every push would then start a run 
 ### 2. Project Implementation
 
 `ci.yml` defines two jobs that run in parallel on a fresh Linux machine:
-- **Frontend:** lint, type check, 58 tests and the build.
-- **Backend:** the same checks, plus the 113 API tests against a PostgreSQL **service container**.
+- **Frontend:** lint, type check, 62 tests and the build.
+- **Backend:** the same checks, plus 114 API tests against a temporary MongoDB server.
 
 ### 3. Code Reference
 
@@ -36,12 +36,6 @@ on:
 ```
 
 ```yaml
-services:
-  postgres:
-    image: postgres:17
-```
-
-```yaml
 - run: npm ci
 - run: npm run lint
 - run: npm run typecheck
@@ -49,7 +43,6 @@ services:
 ```
 
 - **`on`:** run on pushes to `main` and on every pull request.
-- **`services`:** start a real PostgreSQL server next to the job, which the tests reach at `localhost`.
 - **The steps:** run in order, and the job stops at the first failure.
 - **`cache: npm`:** reuses downloaded packages between runs, which makes them faster.
 
@@ -80,10 +73,10 @@ Installing from the lockfile, linting, type checking, tests and a build, ordered
 With a GitHub Actions workflow, with one job each for the frontend and backend, running in parallel. I've written it for MiniDesk and run its steps locally, but haven't turned it on yet.
 
 **How do the backend tests get a database?**
-A PostgreSQL service container starts alongside the job. My test setup creates the `minidesk_test` database in it, so no real data is involved.
+The test setup starts its own temporary MongoDB server, so the workflow needs no database configuration, and no real data is involved.
 
 ### 8. Follow-up Questions
 
-- **Why is a password written in the workflow file?** It only belongs to a temporary server that exists for one run. Real secrets would go in GitHub's encrypted **Secrets** settings.
+- **Where would real secrets go?** In GitHub's encrypted **Secrets** settings, never in the workflow file.
 - **How would you add deployment?** Add a job that runs only on `main` after the checks pass, which builds and releases using secrets stored in GitHub.
 - **Why `npm ci` in CI?** It installs exactly what's in the lockfile, so every run uses the same versions.

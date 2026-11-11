@@ -1,26 +1,26 @@
 # MiniDesk
 
-A full-stack support ticket management system, built with React, TypeScript, Node.js, Express and PostgreSQL.
+A MERN stack support ticket management system, built with MongoDB, Express, React and Node.js, in TypeScript.
 
 Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role sees only what it's allowed to.
 
-**Status: all 11 phases are complete.** The application works from end to end, with 171 automated tests. It isn't deployed, and its Docker files haven't been run yet. See the [project overview](docs/PROJECT_OVERVIEW.md).
+**Status: all 11 phases are complete.** The application works from end to end, with 176 automated tests. It isn't deployed, and its Docker files haven't been run yet. See the [project overview](docs/PROJECT_OVERVIEW.md).
 
 ## Run the project
 
-You need Node.js 22.12 or newer, and PostgreSQL.
+You need Node.js 22.12 or newer, and MongoDB.
 
 ### 1. Start the API
 
 ```bash
 cd backend
 npm install
-cp .env.example .env    # then fill in the values, including DB_PASSWORD
-npm run db:reset        # creates the database and sample data
+cp .env.example .env    # then fill in the values
+npm run db:reset        # loads the sample data
 npm run dev
 ```
 
-`db:reset` deletes any existing data in the `minidesk` database.
+`db:reset` deletes all users and tickets in the database named in `MONGODB_URI`.
 
 ### 2. Start the frontend
 
@@ -50,7 +50,7 @@ Copy `.env.example` to `.env` in the project folder, fill it in, then run `docke
 
 ```bash
 cd frontend && npm test    # no server needed
-cd backend && npm test     # needs PostgreSQL, and uses a separate minidesk_test database
+cd backend && npm test     # starts its own temporary MongoDB, so no server is needed
 ```
 
 ## Useful commands
@@ -78,10 +78,10 @@ cd backend && npm test     # needs PostgreSQL, and uses a separate minidesk_test
 | `dotenv` | Loads settings from `.env` |
 | `jsonwebtoken` | Creates and verifies login tokens |
 | `bcrypt` | Hashes passwords |
-| `pg` | Connects to PostgreSQL |
+| `mongoose` | Schemas, validation and queries for MongoDB |
 | `express-rate-limit` | Limits repeated failed logins |
 | `typescript`, `tsx` | Static types, and running TypeScript directly in development |
-| `vitest`, `supertest` | Running tests, and testing the API over HTTP |
+| `vitest`, `supertest`, `mongodb-memory-server` | Running tests, testing the API over HTTP, and a temporary database |
 
 **Frontend**
 

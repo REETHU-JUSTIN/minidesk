@@ -1,10 +1,10 @@
 import { app } from './app'
-import { pool } from './config/db'
+import { connectDatabase, disconnectDatabase } from './config/db'
 import { env } from './config/env'
 
 async function start() {
-  // Check the database first, so a bad setting gives a clear message right away.
-  await pool.query('SELECT 1')
+  // Connect first, so a bad setting gives a clear message right away.
+  await connectDatabase()
 
   const server = app.listen(env.port, (error) => {
     if (error) {
@@ -19,7 +19,7 @@ async function start() {
   function shutDown(signal: string) {
     console.log(`${signal} received, finishing current requests...`)
     server.close(async () => {
-      await pool.end()
+      await disconnectDatabase()
       process.exit(0)
     })
     // If something hangs, stop anyway after 10 seconds.
@@ -32,6 +32,6 @@ async function start() {
 
 start().catch((error) => {
   console.error('The server failed to start:', error.message)
-  console.error('Check the database settings in backend/.env, and that you have run: npm run db:reset')
+  console.error('Check MONGODB_URI in backend/.env, and that MongoDB is running.')
   process.exit(1)
 })

@@ -35,15 +35,15 @@ const initialState: TicketsState = {
 // the real HTTP request through it.
 export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery, { signal }) => ticketService.getTickets(query, signal))
 
-export const fetchTicketById = createAsyncThunk('tickets/fetchOne', (ticketId: number, { signal }) => ticketService.getTicketById(ticketId, signal))
+export const fetchTicketById = createAsyncThunk('tickets/fetchOne', (ticketId: string, { signal }) => ticketService.getTicketById(ticketId, signal))
 
 export const createTicket = createAsyncThunk('tickets/create', (input: CreateTicketInput) => ticketService.createTicket(input))
 
-export const updateTicket = createAsyncThunk('tickets/update', ({ ticketId, changes }: { ticketId: number; changes: UpdateTicketInput }) =>
+export const updateTicket = createAsyncThunk('tickets/update', ({ ticketId, changes }: { ticketId: string; changes: UpdateTicketInput }) =>
   ticketService.updateTicket(ticketId, changes),
 )
 
-export const deleteTicket = createAsyncThunk('tickets/delete', async (ticketId: number) => {
+export const deleteTicket = createAsyncThunk('tickets/delete', async (ticketId: string) => {
   await ticketService.deleteTicket(ticketId)
   return ticketId
 })

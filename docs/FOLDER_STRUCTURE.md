@@ -8,7 +8,6 @@ What every folder and file is for. Tests sit next to the code they test on the f
 Minidesk/
 ├── frontend/              The React app that runs in the browser
 ├── backend/               The Express API
-├── database/              SQL for the tables and sample data
 ├── docs/                  Guides, API reference, interview notes, Postman collection
 ├── examples/              Practice topics outside MiniDesk: MongoDB, PostgreSQL, Git,
 │                          CI/CD, Docker, AWS, Agile
@@ -85,7 +84,7 @@ backend/
 │   ├── app.ts                       Builds the Express app: middleware, routes, error handling
 │   ├── config/
 │   │   ├── env.ts                   Reads and checks settings, and stops if a secret is missing
-│   │   └── db.ts                    The PostgreSQL connection pool
+│   │   └── db.ts                    Connects to MongoDB
 │   ├── routes/                      URL to controller, with middleware: auth, tickets,
 │   │                                dashboard, users
 │   ├── middleware/
@@ -96,35 +95,33 @@ backend/
 │   │   └── errorHandler.ts          Turns every error into one response shape
 │   ├── controllers/                 Read requests and send responses: auth, ticket,
 │   │                                comment, dashboard, user
-│   ├── services/                    Business rules and SQL: auth, ticket, comment,
+│   ├── models/                      Mongoose schemas: User.ts, Ticket.ts
+│   ├── services/                    Business rules and queries: auth, ticket, comment,
 │   │                                dashboard, user
 │   ├── utils/
 │   │   ├── AppError.ts              An error with an HTTP status, safe to show clients
 │   │   └── validators.ts            Validation for every request
 │   ├── types/                       Data shapes, and req.user for Express
 │   └── scripts/
+│       ├── sampleData.ts, loadSampleData.ts   The sample accounts and tickets
 │       ├── resetDatabase.ts         npm run db:reset: local development only, wipes data
-│       ├── setupDatabase.ts         npm run db:setup: creates tables on a new, empty database
+│       ├── setupDatabase.ts         npm run db:setup: creates indexes on a new database
 │       └── createUser.ts            npm run user:create: makes admin and agent accounts
 │
-├── tests/                           API tests against a real test database
+├── tests/                           API tests against a temporary MongoDB server
 │   ├── helpers.ts, globalSetup.ts   Test database setup and shared tools
 │   └── auth, authenticate, tickets, errors, rateLimit, validators .test.ts
 │
-├── vitest.config.mts                Test settings, which force the minidesk_test database
+├── vitest.config.mts                Test settings
 ├── tsconfig.json                    Type checking, including tests
 ├── tsconfig.build.json              Compiling to dist/, without tests
 ├── Dockerfile                       Container image (untested)
 └── .env.example                     Every setting the API reads
 ```
 
-## Database and docs
+## Docs
 
 ```
-database/
-├── schema.sql                       Tables, rules and indexes. Deletes existing tables first.
-└── seed.sql                         Sample data with a public demo password. Local use only.
-
 docs/
 ├── PROJECT_OVERVIEW.md              What MiniDesk is, and how it fits together
 ├── FOLDER_STRUCTURE.md              This file
@@ -143,7 +140,7 @@ docs/
 examples/
 ├── README.md                        What each example covers, and whether it was tested
 ├── mongodb/                         crud.js, aggregation.js, package.json, README.md
-├── postgresql/                      ctes.sql, stored-procedures.sql, README.md
+├── postgresql/                      SQL practice, the original schema and queries, and SQL interview notes
 ├── git/README.md                    Branching, merge conflicts, pull requests
 ├── ci-cd/                           ci.yml, a GitHub Actions workflow that isn't turned on, and README.md
 ├── docker/README.md                 Docker commands and concepts
@@ -159,6 +156,6 @@ examples/
 | Add an API endpoint | `backend/src/routes/`, then a controller and a service |
 | Change who may do what | `backend/src/services/ticketService.ts` and the `authorize` calls in `routes/`, then match the frontend |
 | Change a validation rule | `backend/src/utils/validators.ts` and `frontend/src/utils/validationRules.ts` |
-| Add a database column | `database/schema.sql`, `seed.sql`, the SQL in services, and both `types` files |
+| Add a field | `backend/src/models/`, `sampleData.ts`, the service's mapper, and both `types` files |
 | Change colors | `frontend/src/index.css` |
 | Change how API errors appear | `frontend/src/services/api.ts` |

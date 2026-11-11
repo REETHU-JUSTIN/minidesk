@@ -9,6 +9,7 @@ import { StatCard } from '../components/common/StatCard'
 import { fetchDashboard } from '../features/dashboard/dashboardSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { formatDate } from '../utils/formatDate'
+import { formatTicketId } from '../utils/formatTicketId'
 
 export function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -58,7 +59,7 @@ export function DashboardPage() {
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{ticket.title}</span>
                       <span className="text-xs text-slate-500">
-                        #{ticket.id} · {ticket.customerName} · {formatDate(ticket.createdAt)}
+                        {formatTicketId(ticket.id)} · {ticket.customerName} · {formatDate(ticket.createdAt)}
                       </span>
                     </span>
                     <StatusBadge status={ticket.status} />

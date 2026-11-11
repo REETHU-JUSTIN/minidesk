@@ -25,7 +25,7 @@ async function fillAndSubmit() {
 
 describe('CreateTicketPage', () => {
   it('creates the ticket, then opens it', async () => {
-    mockCreateTicket.mockResolvedValue(makeTicket({ id: 1009 }))
+    mockCreateTicket.mockResolvedValue(makeTicket({ id: '000000000000000000001009' }))
 
     await fillAndSubmit()
 

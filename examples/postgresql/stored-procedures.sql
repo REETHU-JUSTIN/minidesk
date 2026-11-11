@@ -1,5 +1,5 @@
 -- Functions, triggers and stored procedures on the MiniDesk schema.
--- Run against a database with database/schema.sql and seed.sql loaded:
+-- Run against a database with schema.sql and seed.sql from this folder loaded:
 --   psql -h localhost -p 5433 -U postgres -d minidesk -f examples/postgresql/stored-procedures.sql
 -- Everything is created in a separate "examples" schema and removed at the end,
 -- so the MiniDesk tables are left unchanged.

@@ -47,23 +47,23 @@ describe('ticketsSlice', () => {
   })
 
   it('updates a ticket in both the list and the details page', () => {
-    const other = makeTicket({ id: 1 })
-    const original = makeTicket({ id: 2, status: 'open' })
+    const other = makeTicket({ id: 'a' })
+    const original = makeTicket({ id: 'b', status: 'open' })
     const updated = { ...original, status: 'resolved' as const }
     const before = { ...initialState, items: [other, original], selectedTicket: original }
 
-    const state = reducer(before, updateTicket.fulfilled(updated, 'request-1', { ticketId: 2, changes: { status: 'resolved' } }))
+    const state = reducer(before, updateTicket.fulfilled(updated, 'request-1', { ticketId: 'b', changes: { status: 'resolved' } }))
 
     expect(state.selectedTicket?.status).toBe('resolved')
     expect(state.items).toEqual([other, updated])
   })
 
   it('removes a deleted ticket', () => {
-    const before = { ...initialState, items: [makeTicket({ id: 1 }), makeTicket({ id: 2 })], selectedTicket: makeTicket({ id: 2 }) }
+    const before = { ...initialState, items: [makeTicket({ id: 'a' }), makeTicket({ id: 'b' })], selectedTicket: makeTicket({ id: 'b' }) }
 
-    const state = reducer(before, deleteTicket.fulfilled(2, 'request-1', 2))
+    const state = reducer(before, deleteTicket.fulfilled('b', 'request-1', 'b'))
 
-    expect(state.items.map((ticket) => ticket.id)).toEqual([1])
+    expect(state.items.map((ticket) => ticket.id)).toEqual(['a'])
     expect(state.selectedTicket).toBeNull()
   })
 

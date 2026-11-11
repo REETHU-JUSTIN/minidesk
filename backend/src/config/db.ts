@@ -1,25 +1,17 @@
-import { Pool, types } from 'pg'
-import type { PoolConfig } from 'pg'
+import mongoose from 'mongoose'
 import { env } from './env'
 
-// PostgreSQL's driver returns dates as Date objects. The API promises ISO text,
-// so this converts every timestamp in one place.
-types.setTypeParser(types.builtins.TIMESTAMPTZ, (value) => new Date(value).toISOString())
-
-// One address on a hosting service, or separate settings locally.
-export const connectionConfig: PoolConfig = {
-  ...(env.databaseUrl
-    ? { connectionString: env.databaseUrl }
-    : { host: env.dbHost, port: env.dbPort, database: env.dbName, user: env.dbUser, password: env.dbPassword }),
-  // rejectUnauthorized keeps the certificate check on, so the connection can't be intercepted.
-  ssl: env.dbSsl ? { rejectUnauthorized: true } : undefined,
+// Mongoose keeps a pool of connections open and shares them between requests.
+// Giving up after 5 seconds means a bad address fails quickly, with a clear message.
+export async function connectDatabase(): Promise<void> {
+  await mongoose.connect(env.mongodbUri, { serverSelectionTimeoutMS: 5000 })
 }
 
-// A pool keeps several database connections open and shares them between requests.
-// Opening a new connection for every request would be much slower.
-export const pool = new Pool(connectionConfig)
+export async function disconnectDatabase(): Promise<void> {
+  await mongoose.disconnect()
+}
 
-// Reports problems with idle connections, which would otherwise crash the server.
-pool.on('error', (error) => {
-  console.error('Unexpected database connection error:', error.message)
+// Reports connection problems after startup, which would otherwise go unnoticed.
+mongoose.connection.on('error', (error) => {
+  console.error('MongoDB connection error:', error.message)
 })

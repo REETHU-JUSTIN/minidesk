@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { env } from '../src/config/env'
-import { api, closeDatabase, resetData, tokenFor } from './helpers'
+import { api, closeDatabase, resetData, tokenFor, user } from './helpers'
 
 beforeAll(resetData)
 afterAll(closeDatabase)
 
-const ADMIN_ID = '1'
+const ADMIN_ID = user(1)
 const getMe = (token: string) => api.get('/api/auth/me').set('Authorization', `Bearer ${token}`)
 
 describe('authenticate middleware', () => {
@@ -68,7 +68,7 @@ describe('authenticate middleware', () => {
   })
 
   it('rejects a valid token for a user who no longer exists', async () => {
-    const token = jwt.sign({}, env.jwtSecret, { subject: '99999', expiresIn: '1m' })
+    const token = jwt.sign({}, env.jwtSecret, { subject: 'ffffffffffffffffffffffff', expiresIn: '1m' })
 
     expect((await getMe(token)).status).toBe(401)
   })

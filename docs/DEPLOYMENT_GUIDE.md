@@ -6,14 +6,14 @@ Deployment means putting MiniDesk on servers connected to the internet, so anyon
 |---|---|---|
 | Frontend | Static files: HTML, CSS and JavaScript | Vercel, Netlify |
 | API | A Node.js server | Render, Railway, Fly.io |
-| Database | PostgreSQL | Neon, Render, Supabase |
+| Database | MongoDB | MongoDB Atlas |
 
 **Status:** MiniDesk isn't deployed yet. Following this guide needs accounts on these services, which you create yourself. Free plans often have limits, such as servers that sleep when idle or databases that expire, and the details change, so check each service's current pricing.
 
 ## Before you deploy: checklist
 
 - [ ] **New secrets:** generate a new `JWT_SECRET`. Never reuse your local one.
-- [ ] **No sample data:** never run `db:reset` or `seed.sql` on a real database, because their password is public. Use `db:setup` and `user:create` instead.
+- [ ] **No sample data:** never run `db:reset` on a real database, because its sample accounts have a public password. Use `db:setup` and `user:create` instead.
 - [ ] **HTTPS:** both sites must use `https://`. The services above provide it automatically.
 - [ ] **CORS:** set `CLIENT_ORIGIN` to the frontend's exact address, with no trailing slash.
 - [ ] **Behind a proxy:** set `TRUST_PROXY=1`, so login rate limiting sees each visitor's real address.
@@ -23,7 +23,7 @@ Deployment means putting MiniDesk on servers connected to the internet, so anyon
 
 ### 1. Create the database
 
-Create a PostgreSQL database on your chosen service, and copy its **connection string**. It looks like `postgres://user:password@host:5432/dbname`.
+Create a cluster on MongoDB Atlas, add a database user, and allow your API host to connect. Copy its **connection string**, and add the database name, so it looks like `mongodb+srv://user:password@cluster.example.mongodb.net/minidesk`.
 
 ### 2. Deploy the API
 
@@ -40,15 +40,14 @@ Then add these environment variables:
 | Variable | Value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `DATABASE_URL` | The connection string from step 1 |
-| `DB_SSL` | `true`, if your host requires encrypted connections, as most external connections do |
+| `MONGODB_URI` | The connection string from step 1 |
 | `JWT_SECRET` | A new random value of at least 32 characters |
 | `CLIENT_ORIGIN` | Your frontend's address, added after step 4 |
 | `TRUST_PROXY` | `1` |
 
 Most services set `PORT` themselves, and the API uses whatever port it's given.
 
-### 3. Create the tables and the first admin
+### 3. Create the indexes and the first admin
 
 Open your API service's **shell** or **console**, and run:
 
@@ -57,7 +56,7 @@ npm run db:setup
 NEW_USER_PASSWORD='choose-a-strong-password' npm run user:create -- --name "Your Name" --email you@example.com --role admin
 ```
 
-`db:setup` creates empty tables, and refuses to touch a database that already has tables. Public sign-up only creates customers, so agents are created the same way, with `--role agent`.
+`db:setup` creates the indexes, adds no sample data, and is safe to run again. Public sign-up only creates customers, so agents are created the same way, with `--role agent`.
 
 ### 4. Deploy the frontend
 
@@ -85,7 +84,7 @@ Docker packages each part into a container that runs the same way on any machine
 ### Run everything on your computer
 
 1. Install Docker Desktop.
-2. In the project folder, copy `.env.example` to `.env`, and fill in `POSTGRES_PASSWORD` and `JWT_SECRET`.
+2. In the project folder, copy `.env.example` to `.env`, and fill in `MONGO_PASSWORD` and `JWT_SECRET`.
 3. Run:
 
 ```bash
@@ -119,5 +118,5 @@ docker build -f frontend/Dockerfile --build-arg VITE_API_URL=https://your-api.ex
 | "We can't reach the server" | `VITE_API_URL` is wrong, or was changed without rebuilding the frontend |
 | Refreshing a page gives a 404 | The host isn't sending every address to `index.html` |
 | The API won't start, and names a missing variable | A required environment variable isn't set |
-| "self-signed certificate" or "SSL required" | Set `DB_SSL` to match what your database requires |
+| The API can't connect to Atlas | Check the connection string, and that Atlas allows connections from your API host |
 | Everyone gets "Too many attempts" at once | `TRUST_PROXY` isn't set, so all visitors look like the proxy |

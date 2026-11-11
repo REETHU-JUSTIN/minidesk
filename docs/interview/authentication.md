@@ -12,29 +12,29 @@ Fast hashes aren't suitable, because attackers can try billions of guesses per s
 
 ### 2. Project Implementation
 
-`authService.ts` hashes on sign-up and compares on login. Only the login query reads the hash, because the schema hides it from every other query.
+`authService.js` hashes on sign-up and compares on login. Only the login query reads the hash, because the schema hides it from every other query.
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [backend/src/services/authService.js](../../backend/src/services/authService.js)
 
-```ts
+```js
 const SALT_ROUNDS = 10
 ```
 
-```ts
+```js
 const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 ```
 
-```ts
+```js
 const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? unusedPasswordHash)
 ```
 
-```ts
+```js
 return { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt.toISOString() }
 ```
 
-```ts
+```js
 const user = await User.findOne({ email }).select('+passwordHash')
 ```
 
@@ -94,35 +94,35 @@ It has three parts: `header.payload.signature`. Anyone can read the header and p
 
 ### 2. Project Implementation
 
-- **`authService.ts`:** creates a token at sign-up and login.
-- **`authenticate.ts`:** verifies it on each protected request.
-- **`config/env.ts`:** requires a strong secret.
+- **`authService.js`:** creates a token at sign-up and login.
+- **`authenticate.js`:** verifies it on each protected request.
+- **`config/env.js`:** requires a strong secret.
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [backend/src/services/authService.js](../../backend/src/services/authService.js)
 
-```ts
+```js
 return jwt.sign({}, env.jwtSecret, { subject: userId, expiresIn: env.jwtExpiresIn, algorithm: 'HS256' })
 ```
 
 - The token holds only the user's ID and timestamps, because anyone can read it.
 
-**File:** [backend/src/middleware/authenticate.ts](../../backend/src/middleware/authenticate.ts)
+**File:** [backend/src/middleware/authenticate.js](../../backend/src/middleware/authenticate.js)
 
-```ts
+```js
 const [scheme, token] = (req.headers.authorization ?? '').split(' ')
 ```
 
-```ts
+```js
 const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
 ```
 
-```ts
+```js
 const user = isValidId(userId) ? await getUserById(userId) : null
 ```
 
-```ts
+```js
 req.user = user
 ```
 
@@ -197,15 +197,15 @@ There are two levels:
 
 ### 3. Code Reference
 
-**File:** [backend/src/routes/ticketRoutes.ts](../../backend/src/routes/ticketRoutes.ts)
+**File:** [backend/src/routes/ticketRoutes.js](../../backend/src/routes/ticketRoutes.js)
 
-```ts
+```js
 ticketRoutes.delete('/:id', authorize('admin'), ticketController.deleteTicket)
 ```
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
+```js
 if (!record || (user.role === 'customer' && record.customer._id.toString() !== user.id)) {
   throw new AppError(404, 'We couldn\'t find that ticket.')
 }
@@ -213,15 +213,15 @@ if (!record || (user.role === 'customer' && record.customer._id.toString() !== u
 
 - A customer gets the same 404 for someone else's ticket as for a missing one, so they can't discover which ticket numbers exist.
 
-```ts
+```js
 if (changes.assignedAgentId !== undefined && changes.assignedAgentId !== user.id) {
 ```
 
 - An agent may only assign a ticket to themselves.
 
-**File:** [backend/src/services/commentService.ts](../../backend/src/services/commentService.ts)
+**File:** [backend/src/services/commentService.js](../../backend/src/services/commentService.js)
 
-```ts
+```js
 await requireVisibleTicket(user, ticketId)
 ```
 
@@ -263,5 +263,5 @@ In `requireVisibleTicket`, which reads, updates, deletes and comments all go thr
 ### 8. Follow-up Questions
 
 - **Why does the comment author come from the token, not the request?** Otherwise anyone could post as anyone. My validator drops a sent `userId`, and a test confirmed this.
-- **How would you add a new role?** Add it to the union type, then to the `authorize` calls and service rules. TypeScript helps find the places.
+- **How would you add a new role?** Add it to the `enum` in the User schema, then to the `authorize` calls and service rules.
 - **Should rules live in the database?** Filtering there is efficient, and my ticket list does that by adding the customer to its query filter, though the app still decides what's allowed.

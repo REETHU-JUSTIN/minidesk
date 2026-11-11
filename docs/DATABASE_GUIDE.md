@@ -1,6 +1,6 @@
 # MiniDesk Database Guide
 
-MiniDesk stores its data in MongoDB, using Mongoose. The schemas are in [backend/src/models](../backend/src/models), and the sample data is in [sampleData.ts](../backend/src/scripts/sampleData.ts).
+MiniDesk stores its data in MongoDB, using Mongoose. The schemas are in [backend/src/models](../backend/src/models), and the sample data is in [sampleData.js](../backend/src/scripts/sampleData.js).
 
 The project was first built on PostgreSQL. That version is saved under the Git tag `postgres-version`, and its SQL is in [examples/postgresql](../examples/postgresql/README.md).
 
@@ -117,9 +117,9 @@ Searching titles with a case-insensitive pattern can't use a normal index well. 
 
 ### Tickets with both people's names
 
-From [ticketService.ts](../backend/src/services/ticketService.ts):
+From [ticketService.js](../backend/src/services/ticketService.js):
 
-```ts
+```js
 TicketModel.find(filter).select('-comments').sort({ createdAt: -1 }).populate(PEOPLE)
 ```
 
@@ -127,7 +127,7 @@ TicketModel.find(filter).select('-comments').sort({ createdAt: -1 }).populate(PE
 
 ### Dashboard counts
 
-From [dashboardService.ts](../backend/src/services/dashboardService.ts): one aggregation pipeline, with `$match`, then `$group` using `$sum` and `$cond`, calculates all four numbers.
+From [dashboardService.js](../backend/src/services/dashboardService.js): one aggregation pipeline, with `$match`, then `$group` using `$sum` and `$cond`, calculates all four numbers.
 
 ## Try it
 

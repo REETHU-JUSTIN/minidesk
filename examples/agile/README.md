@@ -59,9 +59,9 @@ MiniDesk's 11 phases worked like short iterations. Each had a goal, a working re
 
 ### 3. Code Reference
 
-**File:** [backend/tests/tickets.test.ts](../../backend/tests/tickets.test.ts)
+**File:** [backend/tests/tickets.test.js](../../backend/tests/tickets.test.js)
 
-```ts
+```js
 it('makes another customer\'s ticket look the same as a missing one', async () => {
 ```
 

@@ -14,28 +14,28 @@ Component -> Redux thunk -> Service -> Axios -> API
 
 ### 2. Project Implementation
 
-- **`services/api.ts`:** the configured Axios instance. See [API integration](api-integration.md).
-- **`services/ticketService.ts`:** tickets, comments and dashboard stats.
-- **`services/authService.ts`:** sign-in, sign-up and sessions.
-- **`services/userService.ts`:** the user list.
+- **`services/api.js`:** the configured Axios instance. See [API integration](api-integration.md).
+- **`services/ticketService.js`:** tickets, comments and dashboard stats.
+- **`services/authService.js`:** sign-in, sign-up and sessions.
+- **`services/userService.js`:** the user list.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/ticketService.ts](../../frontend/src/services/ticketService.ts)
+**File:** [frontend/src/services/ticketService.js](../../frontend/src/services/ticketService.js)
 
-```ts
-export async function updateTicket(ticketId: string, changes: UpdateTicketInput): Promise<Ticket> {
-  const response = await api.put<ApiResponse<Ticket>>(`/tickets/${ticketId}`, changes)
+```js
+export async function updateTicket(ticketId, changes) {
+  const response = await api.put(`/tickets/${ticketId}`, changes)
   return response.data.data
 }
 ```
 
 - Callers get a plain `Ticket`, and never see URLs, Axios or the response wrapper.
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
-export const createTicket = createAsyncThunk('tickets/create', (input: CreateTicketInput) => ticketService.createTicket(input))
+```js
+export const createTicket = createAsyncThunk('tickets/create', (input) => ticketService.createTicket(input))
 ```
 
 - The slice depends on what the function does, not on how it's done.

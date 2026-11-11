@@ -14,15 +14,15 @@ It's kept here rather than turned on, because every push would then start a run 
 
 ### 1. Concept Explanation
 
-**Continuous integration (CI)** automatically checks every change, by installing, linting, type-checking, testing and building it, so problems are caught before they reach `main`.
+**Continuous integration (CI)** automatically checks every change, by installing, linting, testing and building it, so problems are caught before they reach `main`.
 
 **Continuous delivery or deployment (CD)** goes further, automatically releasing changes that pass. Delivery means ready to release with one click. Deployment means released automatically.
 
 ### 2. Project Implementation
 
 `ci.yml` defines two jobs that run in parallel on a fresh Linux machine:
-- **Frontend:** lint, type check, 62 tests and the build.
-- **Backend:** the same checks, plus 114 API tests against a temporary MongoDB server.
+- **Frontend:** lint, 62 tests and the build.
+- **Backend:** lint, and 114 API tests against a temporary MongoDB server.
 
 ### 3. Code Reference
 
@@ -38,7 +38,6 @@ on:
 ```yaml
 - run: npm ci
 - run: npm run lint
-- run: npm run typecheck
 - run: npm test
 ```
 
@@ -67,7 +66,7 @@ A teammate opens a pull request that accidentally removes the admin check on del
 Integration automatically checks every change. Delivery means each passing change is ready to release at the press of a button. Deployment releases it automatically.
 
 **What belongs in the pipeline?**
-Installing from the lockfile, linting, type checking, tests and a build, ordered from fastest to slowest so failures show up quickly.
+Installing from the lockfile, linting, tests and a build, ordered from fastest to slowest so failures show up quickly.
 
 **How would you set it up?**
 With a GitHub Actions workflow, with one job each for the frontend and backend, running in parallel. I've written it for MiniDesk and run its steps locally, but haven't turned it on yet.

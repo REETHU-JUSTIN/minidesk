@@ -16,7 +16,7 @@ A **Dockerfile** is the recipe for building an image.
 
 ### 2. Project Implementation
 
-- **`backend/Dockerfile`:** compiles TypeScript, then builds a small image to run the API.
+- **`backend/Dockerfile`:** installs production packages and runs the API.
 - **`frontend/Dockerfile`:** builds the static files, then serves them with nginx.
 - **`.dockerignore`:** keeps `node_modules`, `dist`, `.env` and `.git` out of builds.
 
@@ -25,26 +25,16 @@ A **Dockerfile** is the recipe for building an image.
 **File:** [backend/Dockerfile](../../backend/Dockerfile)
 
 ```dockerfile
-FROM node:22-bookworm-slim AS build
-```
-
-```dockerfile
-RUN npm ci
-COPY backend/ ./
-RUN npm run build
-```
-
-```dockerfile
 RUN npm ci --omit=dev && npm cache clean --force
-COPY --from=build /app/backend/dist ./dist
+COPY backend/src ./src
 ```
 
 ```dockerfile
 USER node
 ```
 
-- **Multi-stage build:** the first stage has the development tools needed to compile. The final stage copies only the compiled code and production packages.
-- **`--omit=dev`:** leaves out TypeScript, Vitest and other tools the server doesn't need to run.
+- **No build step:** Node runs the JavaScript files directly, so the API needs only one stage. The frontend's Dockerfile uses two, one to build the files and one to serve them with nginx.
+- **`--omit=dev`:** leaves out Vitest and other tools the server doesn't need to run.
 - **`USER node`:** runs as an ordinary user rather than root, which limits the damage if the app were compromised.
 - **Layer caching:** `package.json` is copied and installed before the code. Docker caches each step, so editing code doesn't reinstall every package.
 
@@ -81,13 +71,13 @@ An image is a read-only template, like a class. A container is a running instanc
 A virtual machine includes a whole operating system. A container shares the host's kernel and isolates only the process, so it starts in seconds and uses far less memory.
 
 **What is a multi-stage build?**
-Several `FROM` stages in one Dockerfile, where later stages copy only what they need from earlier ones. Mine compiles TypeScript in one stage, and runs the compiled code in a smaller one.
+Several `FROM` stages in one Dockerfile, where later stages copy only what they need from earlier ones. My frontend builds its files with Node in one stage, then serves them with nginx in the next, so Node isn't in the final image.
 
 **Explain your Dockerfile.**
-The first stage installs every package and compiles TypeScript. The second installs only production packages, copies the compiled code, switches to a non-root user, and starts the server. It also has a health check that calls `/api/health`.
+The API's Dockerfile installs only production packages, copies the source code, switches to a non-root user, and starts the server. It also has a health check that calls `/api/health`.
 
 **Have you run it?**
-No. Docker wasn't installed, so I won't claim it works. I tested its steps another way: in a clean copy of the project, I ran the production install, the build, the database setup and the server. The production install contained no development tools, and the server worked against a real MongoDB database.
+No. Docker wasn't installed, so I won't claim it works. I tested its steps another way: in a clean copy of the project, I ran the production install, the database setup and the server. The production install contained no development tools, and the server worked against a real MongoDB database.
 
 ### 8. Follow-up Questions
 
@@ -201,9 +191,9 @@ Code that works locally needs adjusting for production:
 
 ### 3. Code Reference
 
-**File:** [backend/src/middleware/rateLimits.ts](../../backend/src/middleware/rateLimits.ts)
+**File:** [backend/src/middleware/rateLimits.js](../../backend/src/middleware/rateLimits.js)
 
-```ts
+```js
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: env.loginAttemptLimit,
@@ -212,17 +202,17 @@ export const loginLimiter = rateLimit({
 
 - Only failed logins count, so password guessing is slowed while real users aren't affected.
 
-**File:** [backend/src/app.ts](../../backend/src/app.ts)
+**File:** [backend/src/app.js](../../backend/src/app.js)
 
-```ts
+```js
 if (env.trustProxy > 0) app.set('trust proxy', env.trustProxy)
 ```
 
 - Behind a proxy, every request seems to come from the proxy. This makes Express read the real visitor's address, so one person's failed logins don't block everyone.
 
-**File:** [backend/src/server.ts](../../backend/src/server.ts)
+**File:** [backend/src/server.js](../../backend/src/server.js)
 
-```ts
+```js
 server.close(async () => {
   await disconnectDatabase()
   process.exit(0)
@@ -231,9 +221,9 @@ server.close(async () => {
 
 - On `SIGTERM`, the server stops accepting new connections, finishes current requests, then closes the database connection.
 
-**File:** [backend/src/scripts/setupDatabase.ts](../../backend/src/scripts/setupDatabase.ts)
+**File:** [backend/src/scripts/setupDatabase.js](../../backend/src/scripts/setupDatabase.js)
 
-```ts
+```js
 await Promise.all([User.init(), Ticket.init()])
 ```
 

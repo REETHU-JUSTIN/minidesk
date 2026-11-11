@@ -18,7 +18,6 @@ Interviewers rarely stop at "What is useState?" They follow up with "Where did y
 | Guide | Concepts |
 |---|---|
 | [JavaScript](interview/javascript.md) | Arrow functions, destructuring, spread and rest, array methods, `?.` and `??`, Promises and async/await, closures, events, modules |
-| [TypeScript](interview/typescript.md) | Basic types, interfaces, union types, optional and nullable, narrowing, generics, utility types, type assertions |
 | [HTML, CSS and Tailwind](interview/html-css-tailwind.md) | Semantic HTML and accessibility, Tailwind and design tokens, responsive layout |
 | [React fundamentals](interview/react-fundamentals.md) | Components and JSX, props, lists and keys, conditional rendering, lifting state up |
 | [React Hooks](interview/react-hooks.md) | `useState`, `useEffect`, `useRef`, `useMemo`, `useCallback` and `memo`, custom Hooks, Rules of Hooks |
@@ -43,6 +42,7 @@ These are in the [examples folder](../examples/README.md), in the same format:
 |---|---|
 | [MongoDB](../examples/mongodb/README.md) | CRUD, aggregation pipelines |
 | [PostgreSQL](../examples/postgresql/README.md) | Common table expressions, functions, triggers, procedures |
+| [TypeScript notes](../examples/typescript/INTERVIEW_NOTES.md) | Types, interfaces, generics, from MiniDesk's earlier TypeScript version |
 | [SQL interview notes](../examples/postgresql/INTERVIEW_NOTES.md) | Schema design, constraints, joins, indexes, SQL injection, from MiniDesk's original PostgreSQL version |
 | [Git](../examples/git/README.md) | Branching and merging, pull requests |
 | [CI/CD](../examples/ci-cd/README.md) | Continuous integration with GitHub Actions |

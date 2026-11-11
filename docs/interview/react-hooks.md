@@ -10,7 +10,7 @@ Hooks are functions that let a component remember values and connect to things o
 
 A normal variable inside a component is reset every time the component runs, and changing it doesn't update the screen. `useState` solves both problems. React remembers the value between renders, and calling the setter makes React render the component again with the new value.
 
-```tsx
+```jsx
 const [count, setCount] = useState(0)
 ```
 
@@ -28,18 +28,17 @@ This gives you the current value and a function to change it. `0` is used only o
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
-const [filters, setFilters] = useState<TicketFilterValues>({ ...noFilters, search: initialSearch })
+```jsx
+const [filters, setFilters] = useState({ ...noFilters, search: initialSearch })
 const [page, setPage] = useState(1)
 ```
 
-- `useState<TicketFilterValues>` tells TypeScript what shape the state has.
 - `filters` starts with empty filters, plus any search text from the URL.
 
-```tsx
-const handleFilterChange = useCallback((changes: Partial<TicketFilterValues>) => {
+```jsx
+const handleFilterChange = useCallback((changes) => {
   setFilters((currentFilters) => ({ ...currentFilters, ...changes }))
   setPage(1) // the old page might not exist in the new results
 }, [])
@@ -102,7 +101,7 @@ When the new state depends on the old state. My filter handler merges changes in
 
 A component's main job is to calculate what the screen should show. Some things sit outside that job: API requests, timers and browser events. These are side effects, and `useEffect` runs them **after** React updates the screen.
 
-```tsx
+```jsx
 useEffect(() => {
   // runs after render
   return () => {
@@ -132,9 +131,9 @@ useEffect(() => {
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 useEffect(() => {
   const request = dispatch(fetchTickets({ scope, search: debouncedSearch, status, priority, page, limit: PAGE_SIZE }))
   return () => request.abort()
@@ -145,9 +144,9 @@ useEffect(() => {
 - **The cleanup:** cancels that request if a filter changes or the user leaves.
 - **The dependency array:** lists everything the effect uses, so it re-runs when any of them change.
 
-**File:** [frontend/src/components/common/Modal.tsx](../../frontend/src/components/common/Modal.tsx)
+**File:** [frontend/src/components/common/Modal.jsx](../../frontend/src/components/common/Modal.jsx)
 
-```tsx
+```jsx
 document.addEventListener('keydown', handleKeyDown)
 return () => document.removeEventListener('keydown', handleKeyDown)
 ```
@@ -222,28 +221,28 @@ Yes. The linter flagged a state reset inside the effect in `NotificationMenu`. I
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/CommentForm.tsx](../../frontend/src/components/tickets/CommentForm.tsx)
+**File:** [frontend/src/components/tickets/CommentForm.jsx](../../frontend/src/components/tickets/CommentForm.jsx)
 
-```tsx
-const textareaRef = useRef<HTMLTextAreaElement>(null)
+```jsx
+const textareaRef = useRef(null)
 ```
 
-```tsx
+```jsx
 textareaRef.current?.focus()
 ```
 
-```tsx
+```jsx
 ref={textareaRef}
 ```
 
-- `useRef<HTMLTextAreaElement>(null)` starts empty, with TypeScript told what it will hold.
+- `useRef(null)` starts empty.
 - `ref={textareaRef}` makes React put the real DOM element in `.current`.
 - `?.` guards against the element not being there.
 
-**File:** [frontend/src/hooks/useCloseOnOutside.ts](../../frontend/src/hooks/useCloseOnOutside.ts)
+**File:** [frontend/src/hooks/useCloseOnOutside.js](../../frontend/src/hooks/useCloseOnOutside.js)
 
-```ts
-const clickedInside = containerRef.current?.contains(event.target as Node)
+```js
+const clickedInside = containerRef.current?.contains(event.target)
 if (!clickedInside) onClose()
 ```
 
@@ -292,7 +291,7 @@ My `useCloseOnOutside` Hook adds a `mousedown` listener to the document while th
 
 `useMemo` saves the result of a calculation and reuses it until its dependencies change. Besides avoiding slow recalculation, it keeps the **same object** between renders, which matters because `{} === {}` is false in JavaScript.
 
-```tsx
+```jsx
 const value = useMemo(() => calculate(a, b), [a, b])
 ```
 
@@ -302,9 +301,9 @@ MiniDesk uses it once, for the value shared through `AuthContext`. An earlier ve
 
 ### 3. Code Reference
 
-**File:** [frontend/src/context/AuthProvider.tsx](../../frontend/src/context/AuthProvider.tsx)
+**File:** [frontend/src/context/AuthProvider.jsx](../../frontend/src/context/AuthProvider.jsx)
 
-```tsx
+```jsx
 const value = useMemo(
   () => ({ user, isRestoringSession, login, register, logout }),
   [user, isRestoringSession, login, register, logout],
@@ -367,16 +366,16 @@ Two functions are never equal in JavaScript, even with identical code, and a com
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketFilters.tsx](../../frontend/src/components/tickets/TicketFilters.tsx)
+**File:** [frontend/src/components/tickets/TicketFilters.jsx](../../frontend/src/components/tickets/TicketFilters.jsx)
 
-```tsx
-export const TicketFilters = memo(function TicketFilters({ filters, onFilterChange, onClear }: TicketFiltersProps) {
+```jsx
+export const TicketFilters = memo(function TicketFilters({ filters, onFilterChange, onClear }) {
 ```
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
-const handleFilterChange = useCallback((changes: Partial<TicketFilterValues>) => {
+```jsx
+const handleFilterChange = useCallback((changes) => {
   setFilters((currentFilters) => ({ ...currentFilters, ...changes }))
   setPage(1) // the old page might not exist in the new results
 }, [])
@@ -384,9 +383,9 @@ const handleFilterChange = useCallback((changes: Partial<TicketFilterValues>) =>
 
 - `[]` works because state setters never change, and the function form means it doesn't need to read `filters`.
 
-**File:** [frontend/src/pages/TicketDetailsPage.tsx](../../frontend/src/pages/TicketDetailsPage.tsx)
+**File:** [frontend/src/pages/TicketDetailsPage.jsx](../../frontend/src/pages/TicketDetailsPage.jsx)
 
-```tsx
+```jsx
 const closeDeleteModal = useCallback(() => setIsDeleteOpen(false), [])
 ```
 
@@ -443,14 +442,14 @@ A custom Hook is a function whose name starts with `use` and which calls other H
 | `useCloseOnOutside` | Closes a menu on an outside click or Escape | `NotificationMenu`, `ProfileMenu` |
 | `useAuth` | Reads `AuthContext` safely | Pages, layout, routes |
 | `useCurrentUser` | Returns a user that's never null | Protected pages |
-| `useAppDispatch`, `useAppSelector` | Typed Redux Hooks | Pages using Redux |
+| `useAppDispatch`, `useAppSelector` | Redux Hooks | Pages using Redux |
 
 ### 3. Code Reference
 
-**File:** [frontend/src/hooks/useDebounce.ts](../../frontend/src/hooks/useDebounce.ts)
+**File:** [frontend/src/hooks/useDebounce.js](../../frontend/src/hooks/useDebounce.js)
 
-```ts
-export function useDebounce<T>(value: T, delay: number): T {
+```js
+export function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value)
 
   useEffect(() => {
@@ -462,13 +461,12 @@ export function useDebounce<T>(value: T, delay: number): T {
 }
 ```
 
-- `<T>` makes it work with any type of value.
 - Each change to `value` runs the cleanup first, cancelling the old timer, then starts a new one.
 - `debouncedValue` updates only after the value stops changing for the full delay.
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 const debouncedSearch = useDebounce(search, 300)
 ```
 
@@ -508,7 +506,6 @@ It keeps a delayed copy of the value. An effect starts a timer to update that co
 ### 8. Follow-up Questions
 
 - **When shouldn't you write a custom Hook?** When the logic is used once and is simple. I didn't make one for loading data in `UsersPage`, because the code is clear where it is.
-- **What makes `useDebounce` generic?** The `<T>` parameter, so it returns the same type it receives.
 - **Could `useDebounce` be a regular function?** No. It calls `useState` and `useEffect`, which only work inside a component or Hook.
 
 ---
@@ -530,9 +527,9 @@ React doesn't identify Hooks by name. It tracks them by **call order**, so that 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketDetailsPage.tsx](../../frontend/src/pages/TicketDetailsPage.tsx)
+**File:** [frontend/src/pages/TicketDetailsPage.jsx](../../frontend/src/pages/TicketDetailsPage.jsx)
 
-```tsx
+```jsx
 if (selectedTicket?.id !== ticketId) {
   return <Spinner label="Loading ticket..." />
 }

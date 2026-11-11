@@ -18,20 +18,20 @@ MiniDesk has one context, for authentication. `Sidebar`, `TopNav`, `ProfileMenu`
 
 ### 3. Code Reference
 
-**File:** [frontend/src/context/AuthContext.ts](../../frontend/src/context/AuthContext.ts)
+**File:** [frontend/src/context/AuthContext.js](../../frontend/src/context/AuthContext.js)
 
-```ts
-export const AuthContext = createContext<AuthContextValue | null>(null)
+```js
+export const AuthContext = createContext(null)
 ```
 
-**File:** [frontend/src/context/AuthProvider.tsx](../../frontend/src/context/AuthProvider.tsx)
+**File:** [frontend/src/context/AuthProvider.jsx](../../frontend/src/context/AuthProvider.jsx)
 
-```tsx
-const [user, setUser] = useState<User | null>(null)
+```jsx
+const [user, setUser] = useState(null)
 const [isRestoringSession, setIsRestoringSession] = useState(true)
 ```
 
-```tsx
+```jsx
 const logout = useCallback(() => {
   authService.logout()
   setUser(null)
@@ -39,16 +39,16 @@ const logout = useCallback(() => {
 }, [dispatch])
 ```
 
-```tsx
+```jsx
 return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 ```
 
 - The provider holds the state and exposes it through `value`.
 - `logout` clears the session and the user, then tells Redux to clear its data.
 
-**File:** [frontend/src/hooks/useAuth.ts](../../frontend/src/hooks/useAuth.ts)
+**File:** [frontend/src/hooks/useAuth.js](../../frontend/src/hooks/useAuth.js)
 
-```ts
+```js
 const context = useContext(AuthContext)
 if (!context) throw new Error('useAuth must be used inside AuthProvider.')
 ```
@@ -124,21 +124,21 @@ These are tools for different jobs, and the simplest one that works is usually r
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketComments.tsx](../../frontend/src/components/tickets/TicketComments.tsx)
+**File:** [frontend/src/components/tickets/TicketComments.jsx](../../frontend/src/components/tickets/TicketComments.jsx)
 
-```tsx
-const [comments, setComments] = useState<TicketComment[] | null>(null)
+```jsx
+const [comments, setComments] = useState(null)
 ```
 
-**File:** [frontend/src/hooks/useAuth.ts](../../frontend/src/hooks/useAuth.ts)
+**File:** [frontend/src/hooks/useAuth.js](../../frontend/src/hooks/useAuth.js)
 
-```ts
+```js
 const { user } = useAuth()
 ```
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 const { items, totalPages, totalItems, listStatus, listError } = useAppSelector((state) => state.tickets)
 ```
 

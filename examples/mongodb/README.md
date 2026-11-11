@@ -157,7 +157,7 @@ A sequence of stages that each transform documents. It's MongoDB's equivalent of
 Each stage only sees the previous stage's output. Putting `$match` first reduces the documents everything else processes, and can use an index.
 
 **Translate the dashboard query.**
-One `$group` with `_id: null`, so all documents form a single group, and a `$sum` of `$cond` for each status. MiniDesk's `dashboardService.ts` does this.
+One `$group` with `_id: null`, so all documents form a single group, and a `$sum` of `$cond` for each status. MiniDesk's `dashboardService.js` does this.
 
 ### 8. Follow-up Questions
 

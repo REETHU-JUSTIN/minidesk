@@ -21,13 +21,13 @@ Accessibility means people can use the app with a keyboard, a screen reader or o
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/common/Input.tsx](../../frontend/src/components/common/Input.tsx)
+**File:** [frontend/src/components/common/Input.jsx](../../frontend/src/components/common/Input.jsx)
 
-```tsx
+```jsx
 <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">
 ```
 
-```tsx
+```jsx
 aria-invalid={Boolean(error)}
 aria-describedby={errorId}
 ```
@@ -35,17 +35,17 @@ aria-describedby={errorId}
 - `htmlFor` links the label to the field, so clicking it focuses the field and screen readers announce it.
 - `aria-invalid` says the field has an error, and `aria-describedby` points to the message.
 
-**File:** [frontend/src/components/common/Modal.tsx](../../frontend/src/components/common/Modal.tsx)
+**File:** [frontend/src/components/common/Modal.jsx](../../frontend/src/components/common/Modal.jsx)
 
-```tsx
+```jsx
 role="dialog"
 aria-modal="true"
 aria-label={title}
 ```
 
-**File:** [frontend/src/components/common/Button.tsx](../../frontend/src/components/common/Button.tsx)
+**File:** [frontend/src/components/common/Button.jsx](../../frontend/src/components/common/Button.jsx)
 
-```tsx
+```jsx
 type = 'button',
 ```
 
@@ -112,10 +112,10 @@ MiniDesk is styled entirely with Tailwind. Tokens for the brand color and font a
 
 - Tailwind turns each into classes such as `bg-primary` and `text-primary`.
 
-**File:** [frontend/src/components/common/Button.tsx](../../frontend/src/components/common/Button.tsx)
+**File:** [frontend/src/components/common/Button.jsx](../../frontend/src/components/common/Button.jsx)
 
-```tsx
-const variantClasses: Record<ButtonVariant, string> = {
+```jsx
+const variantClasses = {
   primary: 'bg-primary text-white hover:bg-primary-hover',
 ```
 
@@ -174,23 +174,23 @@ With components, not by writing custom CSS classes. For example, all badges go t
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/DashboardPage.tsx](../../frontend/src/pages/DashboardPage.tsx)
+**File:** [frontend/src/pages/DashboardPage.jsx](../../frontend/src/pages/DashboardPage.jsx)
 
-```tsx
+```jsx
 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 ```
 
 - One column on phones, two from `sm`, and four from `xl`.
 
-```tsx
+```jsx
 <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
 ```
 
 - `grid-cols-1` fixes a real bug described below.
 
-**File:** [frontend/src/components/layout/AppLayout.tsx](../../frontend/src/components/layout/AppLayout.tsx)
+**File:** [frontend/src/components/layout/AppLayout.jsx](../../frontend/src/components/layout/AppLayout.jsx)
 
-```tsx
+```jsx
 <div className="flex min-w-0 flex-1 flex-col">
 ```
 
@@ -223,7 +223,7 @@ Base styles target small screens, and prefixes add changes for larger ones. So `
 Grid columns change by breakpoint, the sidebar slides in on phones, and wide tables scroll inside their card. I tested at phone and desktop widths in a real browser.
 
 **Tell me about a layout bug you fixed.**
-My phone dashboard scrolled sideways by 29 pixels, even though type checks and the build passed. Long truncated titles were stretching the grid column, because a column without an explicit size grows to fit its content. `grid-cols-1` sets it to `minmax(0, 1fr)`, which lets it shrink. I found it by measuring page overflow in a browser test.
+My phone dashboard scrolled sideways by 29 pixels, even though the build passed. Long truncated titles were stretching the grid column, because a column without an explicit size grows to fit its content. `grid-cols-1` sets it to `minmax(0, 1fr)`, which lets it shrink. I found it by measuring page overflow in a browser test.
 
 ### 8. Follow-up Questions
 

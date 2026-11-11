@@ -8,7 +8,7 @@
 
 A component is a function that returns what should appear on screen. JSX is the HTML-like syntax it returns, and the build step compiles it into normal JavaScript function calls.
 
-```tsx
+```jsx
 function Greeting() {
   return <h1>Hello</h1>
 }
@@ -27,22 +27,22 @@ React compares the new result with the previous one, and updates only the parts 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/common/Card.tsx](../../frontend/src/components/common/Card.tsx)
+**File:** [frontend/src/components/common/Card.jsx](../../frontend/src/components/common/Card.jsx)
 
-```tsx
-export function Card({ title, action, className = '', children }: CardProps) {
+```jsx
+export function Card({ title, action, className = '', children }) {
 ```
 
-```tsx
+```jsx
 {title && (
 ```
 
 - `className` rather than `class`, because `class` is a reserved word in JavaScript.
 - `{ }` puts a JavaScript expression inside JSX.
 
-**File:** [frontend/src/pages/CreateTicketPage.tsx](../../frontend/src/pages/CreateTicketPage.tsx)
+**File:** [frontend/src/pages/CreateTicketPage.jsx](../../frontend/src/pages/CreateTicketPage.jsx)
 
-```tsx
+```jsx
 <Card title="Ticket details">
   <TicketForm onSubmit={handleSubmit} />
 </Card>
@@ -99,25 +99,21 @@ Every shared component is configured through props. `children` is a special prop
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/common/Pagination.tsx](../../frontend/src/components/common/Pagination.tsx)
+**File:** [frontend/src/components/common/Pagination.jsx](../../frontend/src/components/common/Pagination.jsx)
 
-```tsx
-interface PaginationProps {
-  page: number
-  totalPages: number
-  onPageChange: (newPage: number) => void
-}
+```jsx
+export function Pagination({ page, totalPages, onPageChange }) {
 ```
 
-```tsx
+```jsx
 <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
 ```
 
 - `page` and `totalPages` flow down, and the click flows up through `onPageChange`.
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 ```
 
@@ -173,18 +169,18 @@ A key can also deliberately reset a component. If the key changes, React treats 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketTable.tsx](../../frontend/src/components/tickets/TicketTable.tsx)
+**File:** [frontend/src/components/tickets/TicketTable.jsx](../../frontend/src/components/tickets/TicketTable.jsx)
 
-```tsx
+```jsx
 {tickets.map((ticket) => (
   <tr key={ticket.id} className="hover:bg-slate-50">
 ```
 
 - `ticket.id` is stable and unique.
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 return <TicketList key={`${scope}:${initialSearch}`} scope={scope} initialSearch={initialSearch} />
 ```
 
@@ -239,13 +235,13 @@ Used for loading states, errors, empty states, and role-based buttons.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/DashboardPage.tsx](../../frontend/src/pages/DashboardPage.tsx)
+**File:** [frontend/src/pages/DashboardPage.jsx](../../frontend/src/pages/DashboardPage.jsx)
 
-```tsx
+```jsx
 if (status === 'failed') {
 ```
 
-```tsx
+```jsx
 if (!stats) {
   return <Spinner label="Loading dashboard..." />
 }
@@ -253,17 +249,17 @@ if (!stats) {
 
 - Early returns handle the error and loading states first, so the remaining code can rely on `stats` existing.
 
-**File:** [frontend/src/components/tickets/TicketManagePanel.tsx](../../frontend/src/components/tickets/TicketManagePanel.tsx)
+**File:** [frontend/src/components/tickets/TicketManagePanel.jsx](../../frontend/src/components/tickets/TicketManagePanel.jsx)
 
-```tsx
+```jsx
 {!isAdmin && !isAssignedToMe && (
 ```
 
 - Only agents who aren't assigned to the ticket see **Assign to Me**.
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 {hasActiveFilters ? 'No tickets match your search and filters.' : 'No tickets here yet.'}
 ```
 
@@ -318,17 +314,17 @@ When two components need the same state, move it to their closest shared parent.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/layout/AppLayout.tsx](../../frontend/src/components/layout/AppLayout.tsx)
+**File:** [frontend/src/components/layout/AppLayout.jsx](../../frontend/src/components/layout/AppLayout.jsx)
 
-```tsx
+```jsx
 const [isMenuOpen, setIsMenuOpen] = useState(false)
 ```
 
-```tsx
+```jsx
 <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 ```
 
-```tsx
+```jsx
 <TopNav title={getPageTitle(pathname)} onOpenMenu={() => setIsMenuOpen(true)} />
 ```
 

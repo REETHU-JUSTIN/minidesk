@@ -12,32 +12,32 @@ A **layout route** has an element but no path. It wraps its child routes and ren
 
 ### 2. Project Implementation
 
-`App.tsx` defines all routes. `BrowserRouter` wraps the app in `main.tsx`. `AppLayout`, `ProtectedRoute` and `GuestRoute` are layout routes, and `*` catches unknown URLs.
+`App.jsx` defines all routes. `BrowserRouter` wraps the app in `main.jsx`. `AppLayout`, `ProtectedRoute` and `GuestRoute` are layout routes, and `*` catches unknown URLs.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/App.tsx](../../frontend/src/App.tsx)
+**File:** [frontend/src/App.jsx](../../frontend/src/App.jsx)
 
-```tsx
+```jsx
 <Route element={<ProtectedRoute />}>
   <Route element={<AppLayout />}>
 ```
 
-```tsx
+```jsx
 <Route path="/dashboard" element={<DashboardPage />} />
 <Route path="/tickets/:ticketId" element={<TicketDetailsPage />} />
 ```
 
-```tsx
+```jsx
 <Route path="*" element={<NotFoundPage />} />
 ```
 
 - `:ticketId` is a URL parameter.
 - `*` matches anything no other route matched.
 
-**File:** [frontend/src/components/layout/AppLayout.tsx](../../frontend/src/components/layout/AppLayout.tsx)
+**File:** [frontend/src/components/layout/AppLayout.jsx](../../frontend/src/components/layout/AppLayout.jsx)
 
-```tsx
+```jsx
 <Outlet />
 ```
 
@@ -103,29 +103,29 @@ A protected route is a wrapper that checks if someone may see a page before show
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/layout/ProtectedRoute.tsx](../../frontend/src/components/layout/ProtectedRoute.tsx)
+**File:** [frontend/src/components/layout/ProtectedRoute.jsx](../../frontend/src/components/layout/ProtectedRoute.jsx)
 
-```tsx
+```jsx
 if (isRestoringSession) {
   return <Spinner />
 }
 ```
 
-```tsx
+```jsx
 if (!user) {
 ```
 
-```tsx
+```jsx
 return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
 ```
 
-```tsx
+```jsx
 if (allowedRoles && !allowedRoles.includes(user.role)) {
   return <Navigate to="/dashboard" replace />
 }
 ```
 
-```tsx
+```jsx
 return <Outlet />
 ```
 
@@ -133,9 +133,9 @@ return <Outlet />
 - `state.from` remembers where the person was going.
 - `replace` keeps the redirecting page out of the Back button's history.
 
-**File:** [frontend/src/App.tsx](../../frontend/src/App.tsx)
+**File:** [frontend/src/App.jsx](../../frontend/src/App.jsx)
 
-```tsx
+```jsx
 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
   <Route path="/users" element={<UsersPage />} />
 </Route>
@@ -198,9 +198,9 @@ No. The code runs in the browser and can be changed, and anyone can call the API
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketDetailsPage.tsx](../../frontend/src/pages/TicketDetailsPage.tsx)
+**File:** [frontend/src/pages/TicketDetailsPage.jsx](../../frontend/src/pages/TicketDetailsPage.jsx)
 
-```tsx
+```jsx
 const { ticketId } = useParams()
 
 if (!ticketId || !OBJECT_ID_PATTERN.test(ticketId)) {
@@ -208,17 +208,17 @@ if (!ticketId || !OBJECT_ID_PATTERN.test(ticketId)) {
 
 - Anyone can type anything into a URL, so the ID's format is checked before making a request.
 
-**File:** [frontend/src/components/layout/TopNav.tsx](../../frontend/src/components/layout/TopNav.tsx)
+**File:** [frontend/src/components/layout/TopNav.jsx](../../frontend/src/components/layout/TopNav.jsx)
 
-```tsx
+```jsx
 navigate(`${listPath}?search=${encodeURIComponent(term)}`)
 ```
 
 - `encodeURIComponent` makes the text safe for a URL, so spaces and symbols can't break it.
 
-**File:** [frontend/src/pages/CreateTicketPage.tsx](../../frontend/src/pages/CreateTicketPage.tsx)
+**File:** [frontend/src/pages/CreateTicketPage.jsx](../../frontend/src/pages/CreateTicketPage.jsx)
 
-```tsx
+```jsx
 const newTicket = await dispatch(createTicket(values)).unwrap()
 navigate(`/tickets/${newTicket.id}`)
 ```

@@ -12,17 +12,17 @@ Redux Toolkit is the official, simpler way to write Redux. A **slice** groups a 
 
 ### 2. Project Implementation
 
-- **`store/store.ts`:** creates the store.
-- **`features/tickets/ticketsSlice.ts`:** the ticket list and selected ticket.
-- **`features/dashboard/dashboardSlice.ts`:** stats and recent tickets.
-- **`store/actions.ts`:** the logout action both slices listen for.
-- **`main.tsx`:** provides the store to the app.
+- **`store/store.js`:** creates the store.
+- **`features/tickets/ticketsSlice.js`:** the ticket list and selected ticket.
+- **`features/dashboard/dashboardSlice.js`:** stats and recent tickets.
+- **`store/actions.js`:** the logout action both slices listen for.
+- **`main.jsx`:** provides the store to the app.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/store/store.ts](../../frontend/src/store/store.ts)
+**File:** [frontend/src/store/store.js](../../frontend/src/store/store.js)
 
-```ts
+```js
 export const store = configureStore({
   reducer: {
     tickets: ticketsReducer,
@@ -33,22 +33,22 @@ export const store = configureStore({
 
 - Each key becomes part of the state, so tickets are at `state.tickets`.
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
+```js
 const ticketsSlice = createSlice({
   name: 'tickets',
   initialState,
 ```
 
-```ts
+```js
 .addCase(fetchTickets.pending, (state) => {
   state.listStatus = 'loading'
   state.listError = null
 })
 ```
 
-```ts
+```js
 .addCase(userLoggedOut, () => initialState)
 ```
 
@@ -125,13 +125,13 @@ Reducers can't do async work. A **thunk** is where it goes. `createAsyncThunk` w
 
 ### 3. Code Reference
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
-export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery, { signal }) => ticketService.getTickets(query, signal))
+```js
+export const fetchTickets = createAsyncThunk('tickets/fetchList', (query, { signal }) => ticketService.getTickets(query, signal))
 ```
 
-```ts
+```js
 .addCase(fetchTickets.fulfilled, (state, action) => {
   state.listStatus = 'succeeded'
   state.items = action.payload.items
@@ -141,9 +141,9 @@ export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: Ticket
 - `action.payload` is whatever the async function returned.
 - `signal` lets a component cancel the real HTTP request.
 
-**File:** [frontend/src/pages/CreateTicketPage.tsx](../../frontend/src/pages/CreateTicketPage.tsx)
+**File:** [frontend/src/pages/CreateTicketPage.jsx](../../frontend/src/pages/CreateTicketPage.jsx)
 
-```tsx
+```jsx
 const newTicket = await dispatch(createTicket(values)).unwrap()
 ```
 
@@ -190,40 +190,40 @@ The form validates, then `CreateTicketPage` dispatches `createTicket`. The thunk
 
 ---
 
-## Reading and Dispatching: Typed Hooks
+## Reading and Dispatching: useSelector and useDispatch
 
 ### 1. Concept Explanation
 
 - **`useSelector`** reads a value from the store, and re-renders the component when that value changes.
 - **`useDispatch`** returns the function that sends actions.
 
-Redux recommends creating typed versions, so TypeScript knows the shape of your state.
+MiniDesk gives them app-specific names, so the whole app imports them from one place.
 
 ### 2. Project Implementation
 
-`useAppSelector` and `useAppDispatch` are defined once in `store/hooks.ts`, and used by the pages and `AuthProvider`.
+`useAppSelector` and `useAppDispatch` are defined once in `store/hooks.js`, and used by the pages and `AuthProvider`.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/store/hooks.ts](../../frontend/src/store/hooks.ts)
+**File:** [frontend/src/store/hooks.js](../../frontend/src/store/hooks.js)
 
-```ts
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
-export const useAppSelector = useSelector.withTypes<RootState>()
+```js
+export const useAppDispatch = useDispatch
+export const useAppSelector = useSelector
 ```
 
-**File:** [frontend/src/pages/DashboardPage.tsx](../../frontend/src/pages/DashboardPage.tsx)
+**File:** [frontend/src/pages/DashboardPage.jsx](../../frontend/src/pages/DashboardPage.jsx)
 
-```tsx
+```jsx
 const dispatch = useAppDispatch()
 const { stats, recentTickets, status, error } = useAppSelector((state) => state.dashboard)
 ```
 
-- `state.dashboard` is fully typed, so a typo in a field name is a compile error.
+- `state.dashboard` picks out the dashboard's part of the store.
 
 ### 4. Why We Used It
 
-Typing these once means no component needs to repeat the types. It also makes thunks work properly with `dispatch`, including `.abort()` and `.unwrap()`.
+One shared file keeps usage consistent, and gives a single place to change them later. `dispatch` also returns what a thunk provides, including `.abort()` and `.unwrap()`.
 
 ### 5. Real-Time Scenario
 
@@ -267,16 +267,16 @@ A race condition is a bug that depends on timing. Responses can arrive in a diff
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 const request = dispatch(fetchTickets({ scope, search: debouncedSearch, status, priority, page, limit: PAGE_SIZE }))
 return () => request.abort()
 ```
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
+```js
 .addCase(fetchTickets.rejected, (state, action) => {
   if (action.meta.aborted) return
 ```

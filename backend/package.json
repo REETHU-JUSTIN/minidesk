@@ -2,17 +2,14 @@
   "name": "backend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit",
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
     "lint": "oxlint",
-    "db:reset": "tsx src/scripts/resetDatabase.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:setup": "node dist/scripts/setupDatabase.js",
-    "user:create": "node dist/scripts/createUser.js",
-    "db:reset:built": "node dist/scripts/resetDatabase.js"
+    "db:reset": "node src/scripts/resetDatabase.js",
+    "db:setup": "node src/scripts/setupDatabase.js",
+    "user:create": "node src/scripts/createUser.js"
   },
   "license": "ISC",
   "description": "MiniDesk REST API",
@@ -26,17 +23,10 @@
     "mongoose": "^9.12.1"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^22.20.5",
-    "@types/supertest": "^7.2.1",
     "mongodb-memory-server": "^11.3.0",
     "oxlint": "^1.91.0",
     "supertest": "^7.3.1",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
     "vitest": "^5.1.0"
-  }
+  },
+  "type": "module"
 }

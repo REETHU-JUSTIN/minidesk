@@ -51,9 +51,9 @@ MiniDesk isn't on AWS. The table above shows where each part would go. Its Docke
 
 ### 3. Code Reference
 
-**File:** [backend/src/config/env.ts](../../backend/src/config/env.ts)
+**File:** [backend/src/config/env.js](../../backend/src/config/env.js)
 
-```ts
+```js
 mongodbUri: requireEnv('MONGODB_URI'),
 ```
 

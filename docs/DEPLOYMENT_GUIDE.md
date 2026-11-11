@@ -32,7 +32,7 @@ Create a web service connected to your GitHub repository:
 | Setting | Value |
 |---|---|
 | Root directory | `backend` |
-| Build command | `npm ci && npm run build` |
+| Build command | `npm ci --omit=dev` |
 | Start command | `npm start` |
 
 Then add these environment variables:
@@ -94,7 +94,7 @@ docker compose up --build
 4. In a second terminal, add the sample data, which is fine for local use:
 
 ```bash
-docker compose run --rm -e NODE_ENV=development api npm run db:reset:built
+docker compose run --rm -e NODE_ENV=development api npm run db:reset
 ```
 
 5. Open http://localhost:8080.

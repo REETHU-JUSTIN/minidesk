@@ -1,6 +1,6 @@
 # JavaScript
 
-Modern JavaScript features as they appear in MiniDesk. These all work the same way in plain JavaScript and in TypeScript.
+Modern JavaScript features as they appear in MiniDesk.
 
 ---
 
@@ -23,17 +23,17 @@ Used throughout MiniDesk: as array method callbacks, as event handlers, and as p
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/layout/Sidebar.tsx](../../frontend/src/components/layout/Sidebar.tsx)
+**File:** [frontend/src/components/layout/Sidebar.jsx](../../frontend/src/components/layout/Sidebar.jsx)
 
-```tsx
+```jsx
 .filter((item) => item.roles.includes(role))
 ```
 
 - This is an arrow function with an implicit return, used as a callback that `filter` calls for each sidebar link.
 
-**File:** [frontend/src/pages/TicketDetailsPage.tsx](../../frontend/src/pages/TicketDetailsPage.tsx)
+**File:** [frontend/src/pages/TicketDetailsPage.jsx](../../frontend/src/pages/TicketDetailsPage.jsx)
 
-```tsx
+```jsx
 onDeleteClick={() => setIsDeleteOpen(true)}
 ```
 
@@ -90,24 +90,24 @@ It's used for props in every component, for values from Redux, for `useState`'s 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketListPage.tsx](../../frontend/src/pages/TicketListPage.tsx)
+**File:** [frontend/src/pages/TicketListPage.jsx](../../frontend/src/pages/TicketListPage.jsx)
 
-```tsx
+```jsx
 const { items, totalPages, totalItems, listStatus, listError } = useAppSelector((state) => state.tickets)
 ```
 
 - Pulls five fields from the Redux tickets state.
 
-```tsx
+```jsx
 const [page, setPage] = useState(1)
 ```
 
 - `useState` returns an array, so this uses array destructuring. That lets you pick the names.
 
-**File:** [frontend/src/components/common/Pagination.tsx](../../frontend/src/components/common/Pagination.tsx)
+**File:** [frontend/src/components/common/Pagination.jsx](../../frontend/src/components/common/Pagination.jsx)
 
-```tsx
-export function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
+```jsx
+export function Pagination({ page, totalPages, onPageChange }) {
 ```
 
 - Destructuring directly in the parameters means the body can use `page`, rather than `props.page`.
@@ -161,25 +161,25 @@ Both use `...`, but they do opposite jobs.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketComments.tsx](../../frontend/src/components/tickets/TicketComments.tsx)
+**File:** [frontend/src/components/tickets/TicketComments.jsx](../../frontend/src/components/tickets/TicketComments.jsx)
 
-```tsx
+```jsx
 setComments((currentComments) => [...(currentComments ?? []), newComment])
 ```
 
 - Builds a new array, so React sees the change.
 
-**File:** [frontend/src/components/common/Button.tsx](../../frontend/src/components/common/Button.tsx)
+**File:** [frontend/src/components/common/Button.jsx](../../frontend/src/components/common/Button.jsx)
 
-```tsx
+```jsx
 {...rest}
 ```
 
 - `...rest` in the parameters collected everything `Button` didn't name, like `onClick`. This line spreads it onto the real `<button>`.
 
-**File:** [frontend/src/utils/formatDate.ts](../../frontend/src/utils/formatDate.ts)
+**File:** [frontend/src/utils/formatDate.js](../../frontend/src/utils/formatDate.js)
 
-```ts
+```js
 ...dateOptions,
 ```
 
@@ -242,31 +242,31 @@ Filtering and sorting tickets happen in MongoDB on the server, which is far more
 
 ### 3. Code Reference
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
+```js
 state.items = state.items.map((ticket) => (ticket.id === updatedTicket.id ? updatedTicket : ticket))
 ```
 
 - Replaces one ticket and keeps the others, in a new array.
 
-```ts
+```js
 state.items = state.items.filter((ticket) => ticket.id !== action.payload)
 ```
 
 - Removes a ticket by keeping all the others.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
+```js
 items: records.map(toTicket),
 ```
 
 - `map` turns each database record into the shape the API promises.
 
-**File:** [frontend/src/utils/getInitials.ts](../../frontend/src/utils/getInitials.ts)
+**File:** [frontend/src/utils/getInitials.js](../../frontend/src/utils/getInitials.js)
 
-```ts
+```js
 .map((part) => part.charAt(0).toUpperCase()) // ["A", "M"]
 ```
 
@@ -303,7 +303,7 @@ An admin deletes ticket #1006. The API removes it from the database. When Redux 
 
 - **How would you count tickets by status with `reduce`?** Start with zeroed counts, then add one to the matching status for each ticket, returning the running total. I do this with a MongoDB aggregation instead.
 - **How does a `sort` compare function work?** It returns a negative or positive number to set the order. `b - a` on timestamps gives newest first.
-- **What does `find` return if there's no match?** `undefined`, which TypeScript makes you handle.
+- **What does `find` return if there's no match?** `undefined`, so the code has to handle that case.
 
 ---
 
@@ -327,17 +327,17 @@ An admin deletes ticket #1006. The API removes it from the database. When Redux 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketForm.tsx](../../frontend/src/components/tickets/TicketForm.tsx)
+**File:** [frontend/src/components/tickets/TicketForm.jsx](../../frontend/src/components/tickets/TicketForm.jsx)
 
-```tsx
+```jsx
 error={errors.title?.message}
 ```
 
 - Usually there's no error, so `errors.title` is `undefined`. Without `?.`, this would crash.
 
-**File:** [frontend/src/components/tickets/TicketManagePanel.tsx](../../frontend/src/components/tickets/TicketManagePanel.tsx)
+**File:** [frontend/src/components/tickets/TicketManagePanel.jsx](../../frontend/src/components/tickets/TicketManagePanel.jsx)
 
-```tsx
+```jsx
 value={ticket.assignedAgentId ?? ''}
 ```
 
@@ -388,36 +388,36 @@ JavaScript runs one thing at a time, so slow work like a network request must no
 
 - **Frontend services:** every API call is async.
 - **Backend services:** every database query is async.
-- **`dashboardSlice.ts`:** `Promise.all` loads two things together.
-- **`CommentForm.tsx`:** `try`/`catch`/`finally` handles a failed post.
+- **`dashboardSlice.js`:** `Promise.all` loads two things together.
+- **`CommentForm.jsx`:** `try`/`catch`/`finally` handles a failed post.
 - **Local data loading:** `TicketComments` and `UsersPage` use `.then` and `.catch`.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/authService.ts](../../frontend/src/services/authService.ts)
+**File:** [frontend/src/services/authService.js](../../frontend/src/services/authService.js)
 
-```ts
-export async function login(input: LoginInput): Promise<User> {
-  const response = await api.post<ApiResponse<AuthResult>>('/auth/login', input)
+```js
+export async function login(input) {
+  const response = await api.post('/auth/login', input)
   saveToken(response.data.data.token)
   return response.data.data.user
 }
 ```
 
 - `await` pauses this function until the response arrives, and the next lines read like normal code.
-- It returns a `Promise<User>`, because `async` functions always return a Promise.
+- It returns a Promise, because `async` functions always do.
 
-**File:** [frontend/src/features/dashboard/dashboardSlice.ts](../../frontend/src/features/dashboard/dashboardSlice.ts)
+**File:** [frontend/src/features/dashboard/dashboardSlice.js](../../frontend/src/features/dashboard/dashboardSlice.js)
 
-```ts
+```js
 const [stats, recentTickets] = await Promise.all([getDashboardStats(signal), getTickets({ limit: 5 }, signal)])
 ```
 
 - Starts both requests at once, and waits for both. If either fails, the whole thing fails.
 
-**File:** [frontend/src/components/tickets/CommentForm.tsx](../../frontend/src/components/tickets/CommentForm.tsx)
+**File:** [frontend/src/components/tickets/CommentForm.jsx](../../frontend/src/components/tickets/CommentForm.jsx)
 
-```tsx
+```jsx
 try {
   await onAddComment(trimmedMessage)
   setMessage('') // only cleared on success, so a failed post doesn't lose the text
@@ -492,9 +492,9 @@ function makeCounter() {
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketComments.tsx](../../frontend/src/components/tickets/TicketComments.tsx)
+**File:** [frontend/src/components/tickets/TicketComments.jsx](../../frontend/src/components/tickets/TicketComments.jsx)
 
-```tsx
+```jsx
 let isCancelled = false
 
 getComments(ticketId)
@@ -503,7 +503,7 @@ getComments(ticketId)
   })
 ```
 
-```tsx
+```jsx
 return () => {
   isCancelled = true
 }
@@ -560,21 +560,21 @@ Separately, browsers have default behaviors, such as a form reloading the page o
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/common/Modal.tsx](../../frontend/src/components/common/Modal.tsx)
+**File:** [frontend/src/components/common/Modal.jsx](../../frontend/src/components/common/Modal.jsx)
 
-```tsx
+```jsx
 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
 ```
 
-```tsx
+```jsx
 onClick={(event) => event.stopPropagation()}
 ```
 
 - The backdrop closes the modal on click, and the dialog sits inside it. Stopping the click there means only clicks on the backdrop itself close it.
 
-**File:** [frontend/src/components/tickets/CommentForm.tsx](../../frontend/src/components/tickets/CommentForm.tsx)
+**File:** [frontend/src/components/tickets/CommentForm.jsx](../../frontend/src/components/tickets/CommentForm.jsx)
 
-```tsx
+```jsx
 event.preventDefault() // stops the browser from reloading the page
 ```
 
@@ -630,19 +630,19 @@ MiniDesk uses named exports for components, Hooks and helpers, and default expor
 
 ### 3. Code Reference
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
+```js
 import * as ticketService from '../../services/ticketService'
 ```
 
-```ts
+```js
 export default ticketsSlice.reducer
 ```
 
-**File:** [frontend/src/store/store.ts](../../frontend/src/store/store.ts)
+**File:** [frontend/src/store/store.js](../../frontend/src/store/store.js)
 
-```ts
+```js
 import ticketsReducer from '../features/tickets/ticketsSlice'
 ```
 
@@ -654,7 +654,7 @@ Modules give each file one job, and the build tool can remove unused exports. Na
 
 ### 5. Real-Time Scenario
 
-When the app builds, Vite follows these imports starting from `main.tsx`, working out everything the app uses and bundling it. Exports that nothing imports can be left out, which keeps downloads smaller.
+When the app builds, Vite follows these imports starting from `main.jsx`, working out everything the app uses and bundling it. Exports that nothing imports can be left out, which keeps downloads smaller.
 
 ### 6. Interview Questions
 
@@ -675,6 +675,5 @@ By job: `components`, `pages`, `hooks`, `services`, `features` and `store`. Page
 
 ### 8. Follow-up Questions
 
-- **What does `import type` do?** It imports only for type checking, and it's removed from the final JavaScript.
 - **ES Modules versus CommonJS?** ES Modules use `import` and are statically analyzed. CommonJS uses `require` and was Node's original system.
 - **What is code splitting?** Loading parts of an app only when needed, using a dynamic `import()`. MiniDesk doesn't use it yet.

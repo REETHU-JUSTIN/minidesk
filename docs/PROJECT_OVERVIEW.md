@@ -34,8 +34,8 @@ Customers can only create accounts for themselves. Admin and agent accounts are 
 
 | Area | Technologies |
 |---|---|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, React Router 7, Redux Toolkit, Context API, React Hook Form, Axios, Lucide icons |
-| Backend | Node.js 22, Express 5, TypeScript, JWT, bcrypt, express-rate-limit |
+| Frontend | React 19, JavaScript, Vite, Tailwind CSS 4, React Router 7, Redux Toolkit, Context API, React Hook Form, Axios, Lucide icons |
+| Backend | Node.js 22, Express 5, JavaScript, JWT, bcrypt, express-rate-limit |
 | Database | MongoDB, using Mongoose schemas, populate and aggregation pipelines |
 | Testing | Vitest, React Testing Library, Supertest, Postman |
 | Tooling | Git and GitHub, oxlint, Docker and Docker Compose (written, not yet run) |
@@ -113,7 +113,7 @@ The application is complete and works from end to end on a local machine.
 
 > "MiniDesk is a full-stack support ticket system, a bit like a small Zendesk. Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role only sees what it's allowed to, and that's enforced on the server.
 >
-> The frontend uses React, TypeScript and Redux Toolkit. The backend is Node.js and Express with MongoDB and Mongoose, using JWT for authentication and bcrypt for passwords. It has 176 automated tests across the frontend and API."
+> The frontend uses React and Redux Toolkit. The backend is Node.js and Express with MongoDB and Mongoose, using JWT for authentication and bcrypt for passwords. It has 176 automated tests across the frontend and API."
 
 If asked what was hardest, these are true examples:
 - Stopping older responses from overwriting newer ones when users clicked quickly.
@@ -122,7 +122,7 @@ If asked what was hardest, these are true examples:
 ## For your resume
 
 > **MiniDesk: Support Ticket Management System** | [github.com/REETHU-JUSTIN/minidesk](https://github.com/REETHU-JUSTIN/minidesk)
-> *MongoDB, Express, React, Node.js, TypeScript, Redux Toolkit, JWT*
+> *MongoDB, Express, React, Node.js, JavaScript, Redux Toolkit, JWT*
 > - Developed a MERN stack support ticket system with customer, agent and admin roles, enforcing permissions on the server at route and record level.
 > - Built REST APIs with JWT authentication, bcrypt password hashing, request validation, rate limiting and centralized error handling.
 > - Designed MongoDB schemas with Mongoose, using embedded comments, references with populate, aggregation pipelines and indexes.

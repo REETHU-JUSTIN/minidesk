@@ -2,7 +2,7 @@
 
 This guide follows the project phase by phase, explaining what was built, why, and how the pieces connect.
 
-**Read it as a history.** Each phase section describes the code as it was at that time. Later work replaced some of it: for example, the temporary sample data from Phases 1 to 4 was deleted in Phase 7, and PostgreSQL from Phase 6 was replaced by MongoDB in the MERN conversion at the end. For how the code works **now**, use these instead:
+**Read it as a history.** Each phase section describes the code as it was at that time. Later work replaced some of it: for example, the temporary sample data from Phases 1 to 4 was deleted in Phase 7, PostgreSQL from Phase 6 was replaced by MongoDB, and TypeScript was replaced by JavaScript, in the conversions at the end. Code samples in the phase sections are still shown as they were written. For how the code works **now**, use these instead:
 
 - [Project overview](PROJECT_OVERVIEW.md): what MiniDesk is and how it fits together
 - [Folder structure](FOLDER_STRUCTURE.md): what each file does
@@ -1070,5 +1070,23 @@ The original version is saved under the Git tag `postgres-version`. Its SQL and 
 1. Open the `minidesk` database in MongoDB Compass, and find a ticket with embedded comments.
 2. In `dashboardService.ts`, remove `new Types.ObjectId`, run the tests and explain the failure. Then restore it.
 3. Add a compound index on `status` and `createdAt`, then check a query with `.explain('executionStats')`.
-4. Compare `backend/src/services/ticketService.ts` with `examples/postgresql/minidesk-sql/ticketService.ts`. Which is easier to read, and why?
+4. Compare `backend/src/services/ticketService.js` with `examples/postgresql/minidesk-sql/ticketService.ts`. Which is easier to read, and why?
 5. Add a `tags` array to tickets, and a filter that uses it.
+
+## JavaScript conversion: TypeScript to JavaScript
+
+MiniDesk was converted from TypeScript to plain JavaScript, so the code uses only what you need to learn for MERN first. The TypeScript version is saved under the Git tag `typescript-version`, and its notes are in [examples/typescript](../examples/typescript/INTERVIEW_NOTES.md).
+
+### What changed
+
+| Area | Before | After |
+|---|---|---|
+| File names | `.ts` and `.tsx` | `.js` and `.jsx` |
+| Type labels | `ticketId: string` | `ticketId` |
+| Shared types | `types/index.ts` | Removed |
+| Running the API | Compiled to `dist/` | Node runs `src/` directly |
+| Backend imports | `'../config/db'` | `'../config/db.js'`, because Node needs the full file name |
+
+**What didn't change:** the logic. Routes, React components, Redux and MongoDB queries work as they did.
+
+**What you give up:** the editor no longer warns about a wrong field or wrong kind of data before the code runs. The automated tests and the API's validators are now what catch those mistakes.

@@ -28,13 +28,13 @@ A single MongoDB document can't exceed 16 MB, which is why unbounded data should
 
 ### 3. Code Reference
 
-**File:** [backend/src/models/Ticket.ts](../../backend/src/models/Ticket.ts)
+**File:** [backend/src/models/Ticket.js](../../backend/src/models/Ticket.js)
 
-```ts
+```js
 comments: { type: [commentSchema], default: [] },
 ```
 
-```ts
+```js
 customer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 assignedAgent: { type: Schema.Types.ObjectId, ref: 'User', default: null },
 ```
@@ -42,9 +42,9 @@ assignedAgent: { type: Schema.Types.ObjectId, ref: 'User', default: null },
 - `[commentSchema]` makes comments an array inside the ticket.
 - `ObjectId` with `ref` stores only the user's ID, and tells Mongoose which model it points to.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
+```js
 await TicketModel.deleteOne({ _id: ticketId })
 ```
 
@@ -103,17 +103,17 @@ MongoDB itself accepts documents of any shape. **Mongoose** is a library that ad
 
 ### 3. Code Reference
 
-**File:** [backend/src/models/User.ts](../../backend/src/models/User.ts)
+**File:** [backend/src/models/User.js](../../backend/src/models/User.js)
 
-```ts
+```js
 email: { type: String, required: true, unique: true, lowercase: true },
 ```
 
-```ts
+```js
 passwordHash: { type: String, required: true, select: false },
 ```
 
-```ts
+```js
 role: { type: String, enum: ['admin', 'agent', 'customer'], default: 'customer', required: true },
 ```
 
@@ -121,9 +121,9 @@ role: { type: String, enum: ['admin', 'agent', 'customer'], default: 'customer',
 - `lowercase` normalizes emails before saving.
 - `select: false` leaves the hash out of every query, unless one asks for it by name.
 
-**File:** [backend/src/models/Ticket.ts](../../backend/src/models/Ticket.ts)
+**File:** [backend/src/models/Ticket.js](../../backend/src/models/Ticket.js)
 
-```ts
+```js
 { timestamps: true },
 ```
 
@@ -131,7 +131,7 @@ role: { type: String, enum: ['admin', 'agent', 'customer'], default: 'customer',
 
 ### 4. Why We Used It
 
-Without a schema, a typo could silently store `stauts` instead of `status`. Mongoose validates data before saving, and gives TypeScript-friendly models. It's also what most MERN teams use.
+Without a schema, a typo could silently store `stauts` instead of `status`. Mongoose validates data before saving. It's also what most MERN teams use.
 
 ### 5. Real-Time Scenario
 
@@ -174,25 +174,25 @@ MongoDB queries are objects: `{ status: 'open' }` finds documents with that stat
 
 ### 2. Project Implementation
 
-`ticketService.ts` handles the ticket list with filters, search, sorting and pagination. `populate` loads customer and agent names.
+`ticketService.js` handles the ticket list with filters, search, sorting and pagination. `populate` loads customer and agent names.
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
-const filter: Record<string, unknown> = {}
+```js
+const filter = {}
 ```
 
-```ts
+```js
 filter.customer = user.id
 ```
 
-```ts
+```js
 filter.title = { $regex: escapedSearch, $options: 'i' }
 ```
 
-```ts
+```js
 .sort({ [sortField]: -1, _id: -1 })
 .skip((page - 1) * limit)
 .limit(limit)
@@ -203,15 +203,15 @@ filter.title = { $regex: escapedSearch, $options: 'i' }
 - `skip` and `limit` paginate. `_id` is a tiebreak, so the order is stable.
 - `populate` fetches users in a single extra query for the whole page, rather than one per ticket.
 
-```ts
+```js
 await TicketModel.updateOne({ _id: ticketId }, { $set: updates })
 ```
 
 - `$set` changes only the listed fields. Without it, the document's other fields could be lost.
 
-**File:** [backend/src/services/commentService.ts](../../backend/src/services/commentService.ts)
+**File:** [backend/src/services/commentService.js](../../backend/src/services/commentService.js)
 
-```ts
+```js
 { $push: { comments: { author: user.id, message } } },
 ```
 
@@ -270,25 +270,25 @@ An aggregation pipeline is a list of stages. Each stage transforms the documents
 
 ### 2. Project Implementation
 
-`dashboardService.ts` calculates all four dashboard numbers in one pipeline.
+`dashboardService.js` calculates all four dashboard numbers in one pipeline.
 
 ### 3. Code Reference
 
-**File:** [backend/src/services/dashboardService.ts](../../backend/src/services/dashboardService.ts)
+**File:** [backend/src/services/dashboardService.js](../../backend/src/services/dashboardService.js)
 
-```ts
-const countStatus = (status: string) => ({ $sum: { $cond: [{ $eq: ['$status', status] }, 1, 0] } })
+```js
+const countStatus = (status) => ({ $sum: { $cond: [{ $eq: ['$status', status] }, 1, 0] } })
 ```
 
-```ts
+```js
 const match = user.role === 'customer' ? { customer: new Types.ObjectId(user.id) } : {}
 ```
 
-```ts
+```js
 _id: null,
 ```
 
-```ts
+```js
 return stats ?? { total: 0, open: 0, inProgress: 0, resolved: 0 }
 ```
 
@@ -346,18 +346,18 @@ Without an index, MongoDB reads every document to find matches, called a **colle
 
 ### 3. Code Reference
 
-**File:** [backend/src/models/Ticket.ts](../../backend/src/models/Ticket.ts)
+**File:** [backend/src/models/Ticket.js](../../backend/src/models/Ticket.js)
 
-```ts
+```js
 ticketSchema.index({ customer: 1 })
 ticketSchema.index({ assignedAgent: 1 })
 ticketSchema.index({ createdAt: -1 })
 ```
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [backend/src/services/authService.js](../../backend/src/services/authService.js)
 
-```ts
-if ((error as { code?: number }).code === DUPLICATE_KEY) {
+```js
+if ((error).code === DUPLICATE_KEY) {
 ```
 
 - The unique index rejects a duplicate email with error code 11000, which becomes a 409 response.
@@ -415,21 +415,21 @@ Regular expressions need care too: user text used as a pattern can match more th
 
 ### 3. Code Reference
 
-**File:** [backend/src/utils/validators.ts](../../backend/src/utils/validators.ts)
+**File:** [backend/src/utils/validators.js](../../backend/src/utils/validators.js)
 
-```ts
+```js
 return typeof value === 'string' ? value.replaceAll('\0', '').trim() : ''
 ```
 
-```ts
+```js
 const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i
 ```
 
 - Anything that isn't a string becomes empty text, so an object such as `{ "$ne": null }` can't reach a query.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
+```js
 const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 ```
 

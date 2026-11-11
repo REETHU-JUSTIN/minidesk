@@ -12,7 +12,7 @@ An interceptor is a function that runs on every request or response. It's like m
 
 ### 2. Project Implementation
 
-`services/api.ts` creates one configured Axios instance with two interceptors:
+`services/api.js` creates one configured Axios instance with two interceptors:
 
 - **Request:** attaches the login token.
 - **Response:** turns every failure into a readable message, and handles expired sessions.
@@ -21,16 +21,16 @@ All services use this instance.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/api.ts](../../frontend/src/services/api.ts)
+**File:** [frontend/src/services/api.js](../../frontend/src/services/api.js)
 
-```ts
+```js
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
   timeout: 15000,
 })
 ```
 
-```ts
+```js
 api.interceptors.request.use((config) => {
   const token = getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -38,7 +38,7 @@ api.interceptors.request.use((config) => {
 })
 ```
 
-```ts
+```js
 if (error.response?.status === 401 && sentCurrentToken) {
   clearToken()
   onSessionExpired?.()
@@ -49,7 +49,7 @@ if (error.response?.status === 401 && sentCurrentToken) {
 - No service has to remember to send the token.
 - `sentCurrentToken` means a wrong password on the login page doesn't count as an expired session, because login sends no token.
 
-```ts
+```js
 if (!error.response) return 'We can\'t reach the server. Please check your connection and try again.'
 ```
 
@@ -89,7 +89,7 @@ A browser test does exactly this by replacing the token with an invalid one mid-
 A function that runs on every request or response. It's similar to Express middleware, but on the client side.
 
 **How did you implement API calls?**
-With one Axios instance in `api.ts`, and service files on top of it, such as `getTickets`. Redux thunks and components call the services, never Axios directly.
+With one Axios instance in `api.js`, and service files on top of it, such as `getTickets`. Redux thunks and components call the services, never Axios directly.
 
 **How do you attach the JWT?**
 A request interceptor reads it from `localStorage` and sets the `Authorization` header on every request.
@@ -99,7 +99,7 @@ The response interceptor sees a 401 on a request that sent the current token. It
 
 ### 8. Follow-up Questions
 
-- **Why does `AuthProvider` register a handler rather than `api.ts` calling it directly?** `api.ts` is plain JavaScript and can't use Hooks or React state. A registered function connects them without `api.ts` depending on React.
+- **Why does `AuthProvider` register a handler rather than `api.js` calling it directly?** `api.js` is plain JavaScript and can't use Hooks or React state. A registered function connects them without `api.js` depending on React.
 - **Why check for the current token?** So a late 401 from an old token can't sign out someone who has already signed back in.
 - **What would you add for production?** Short-lived tokens with automatic refresh, and retry logic for temporary failures.
 
@@ -109,7 +109,7 @@ The response interceptor sees a 401 on a request that sent the current token. It
 
 ### 1. Concept Explanation
 
-The frontend and backend are separate programs that communicate over HTTP using JSON. To work together, they must agree on a **contract**: URLs, data shapes, status codes and error formats. TypeScript types can describe that contract on both sides, but they only check each side's own code.
+The frontend and backend are separate programs that communicate over HTTP using JSON. To work together, they must agree on a **contract**: URLs, data shapes, status codes and error formats. Nothing checks that contract automatically, so the API validates what it receives, and tests confirm what it returns.
 
 ### 2. Project Implementation
 
@@ -122,23 +122,22 @@ The frontend and backend are separate programs that communicate over HTTP using 
 
 ### 3. Code Reference
 
-**File:** [frontend/src/services/ticketService.ts](../../frontend/src/services/ticketService.ts)
+**File:** [frontend/src/services/ticketService.js](../../frontend/src/services/ticketService.js)
 
-```ts
-export async function getTickets(query: TicketQuery, signal?: AbortSignal): Promise<PaginatedResponse<Ticket>> {
-  const response = await api.get<ApiResponse<PaginatedResponse<Ticket>>>('/tickets', { params: query, signal })
+```js
+export async function getTickets(query, signal) {
+  const response = await api.get('/tickets', { params: query, signal })
   return response.data.data
 }
 ```
 
 - `params` turns the query object into `?status=open&page=2`.
 - `response.data` is the body from Axios, and `.data` is the API's own wrapper.
-- The generic says what we expect back. It isn't checked at runtime.
 
-**File:** [frontend/src/features/tickets/ticketsSlice.ts](../../frontend/src/features/tickets/ticketsSlice.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.js](../../frontend/src/features/tickets/ticketsSlice.js)
 
-```ts
-export const fetchTickets = createAsyncThunk('tickets/fetchList', (query: TicketQuery, { signal }) => ticketService.getTickets(query, signal))
+```js
+export const fetchTickets = createAsyncThunk('tickets/fetchList', (query, { signal }) => ticketService.getTickets(query, signal))
 ```
 
 - `signal` connects `request.abort()` in a component to the real HTTP request.

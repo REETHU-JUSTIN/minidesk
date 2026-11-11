@@ -10,7 +10,7 @@ MiniDesk has both kinds of form on purpose, so you can compare them: `CommentFor
 
 In a controlled input, React state holds the value. The input displays that state, and every keystroke updates it.
 
-```tsx
+```jsx
 <input value={text} onChange={(event) => setText(event.target.value)} />
 ```
 
@@ -24,21 +24,21 @@ In an **uncontrolled** input, the DOM holds the value, and you read it when need
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/CommentForm.tsx](../../frontend/src/components/tickets/CommentForm.tsx)
+**File:** [frontend/src/components/tickets/CommentForm.jsx](../../frontend/src/components/tickets/CommentForm.jsx)
 
-```tsx
+```jsx
 const [message, setMessage] = useState('')
 ```
 
-```tsx
+```jsx
 value={message}
 ```
 
-```tsx
+```jsx
 onChange={(event) => setMessage(event.target.value)}
 ```
 
-```tsx
+```jsx
 const trimmedMessage = message.trim()
 if (trimmedMessage === '') {
   setError('Write a comment before posting.')
@@ -93,23 +93,23 @@ React Hook Form manages field values, validation and errors. It uses uncontrolle
 
 ### 2. Project Implementation
 
-`TicketForm`, `TicketEditForm`, `LoginPage` and `RegisterPage` use it. Shared rules are in `validationRules.ts`.
+`TicketForm`, `TicketEditForm`, `LoginPage` and `RegisterPage` use it. Shared rules are in `validationRules.js`.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/components/tickets/TicketForm.tsx](../../frontend/src/components/tickets/TicketForm.tsx)
+**File:** [frontend/src/components/tickets/TicketForm.jsx](../../frontend/src/components/tickets/TicketForm.jsx)
 
-```tsx
-} = useForm<CreateTicketInput>({
+```jsx
+} = useForm({
   defaultValues: { title: '', description: '', category: 'general', priority: 'medium' },
 })
 ```
 
-```tsx
+```jsx
 <form className="space-y-5 p-5" noValidate onSubmit={handleSubmit(submitValidForm)}>
 ```
 
-```tsx
+```jsx
 error={errors.title?.message}
 {...register('title', ticketTitleRules)}
 ```
@@ -117,17 +117,17 @@ error={errors.title?.message}
 - `register` returns `name`, `onChange`, `onBlur` and `ref`, and the spread passes them to the input.
 - `noValidate` turns off browser pop-ups, so our own messages show.
 
-**File:** [frontend/src/utils/validationRules.ts](../../frontend/src/utils/validationRules.ts)
+**File:** [frontend/src/utils/validationRules.js](../../frontend/src/utils/validationRules.js)
 
-```ts
-validate: (value: string) => value.trim().length >= 5 || 'Enter a title of at least 5 characters.',
+```js
+validate: (value) => value.trim().length >= 5 || 'Enter a title of at least 5 characters.',
 ```
 
 - A rule returns `true` when valid, or the error message when not. Trimming stops titles made only of spaces.
 
-**File:** [frontend/src/pages/RegisterPage.tsx](../../frontend/src/pages/RegisterPage.tsx)
+**File:** [frontend/src/pages/RegisterPage.jsx](../../frontend/src/pages/RegisterPage.jsx)
 
-```tsx
+```jsx
 validate: (value) => value === getValues('password') || 'The passwords must match.',
 ```
 
@@ -158,7 +158,7 @@ It handles values, validation and submission with little code, and few re-render
 No. It gives quick feedback, but anyone can skip it by calling the API directly with a tool like Postman. The server must validate too, which MiniDesk does.
 
 **How did you validate your forms?**
-With React Hook Form and shared rules in `validationRules.ts`. Errors pass to my `Input` component, which displays them and connects them for screen readers.
+With React Hook Form and shared rules in `validationRules.js`. Errors pass to my `Input` component, which displays them and connects them for screen readers.
 
 **How do you stop double submissions?**
 `isSubmitting` is true while the async submit runs, and passing it as `isLoading` disables the button.

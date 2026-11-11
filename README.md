@@ -1,6 +1,6 @@
 # MiniDesk
 
-A MERN stack support ticket management system, built with MongoDB, Express, React and Node.js, in TypeScript.
+A MERN stack support ticket management system, built with MongoDB, Express, React and Node.js, in JavaScript.
 
 Customers raise tickets, agents take ownership and update them, and admins manage everything. Each role sees only what it's allowed to.
 
@@ -60,11 +60,9 @@ cd backend && npm test     # starts its own temporary MongoDB, so no server is n
 | Both | `npm run dev` | Starts in development mode with automatic reloads |
 | Both | `npm test` | Runs the automated tests |
 | Both | `npm run lint` | Checks for common code problems |
-| Both | `npm run build` | Creates a production build |
-| `frontend` | `npx tsc -b` | Checks TypeScript types |
+| `frontend` | `npm run build` | Creates a production build |
 | `frontend` | `npm run preview` | Serves the production build locally |
-| `backend` | `npm run typecheck` | Checks TypeScript types |
-| `backend` | `npm start` | Runs the production build |
+| `backend` | `npm start` | Runs the server without automatic reloads |
 | `backend` | `npm run db:reset` | Rebuilds the database and sample data |
 
 ## Installed packages
@@ -80,7 +78,6 @@ cd backend && npm test     # starts its own temporary MongoDB, so no server is n
 | `bcrypt` | Hashes passwords |
 | `mongoose` | Schemas, validation and queries for MongoDB |
 | `express-rate-limit` | Limits repeated failed logins |
-| `typescript`, `tsx` | Static types, and running TypeScript directly in development |
 | `vitest`, `supertest`, `mongodb-memory-server` | Running tests, testing the API over HTTP, and a temporary database |
 
 **Frontend**
@@ -89,7 +86,6 @@ cd backend && npm test     # starts its own temporary MongoDB, so no server is n
 |---|---|
 | `react`, `react-dom` | The UI library |
 | `vite`, `@vitejs/plugin-react` | Development server and build tool |
-| `typescript` | Static types |
 | `tailwindcss`, `@tailwindcss/vite` | Utility-first CSS |
 | `lucide-react` | Icons |
 | `react-hook-form` | Form state and validation |

@@ -21,8 +21,8 @@ Most tests follow three steps: **Arrange** the setup, **Act** by doing the thing
 | Tool | Type | Where |
 |---|---|---|
 | Vitest | Test runner for everything | Both apps |
-| Vitest alone | Unit | `validators.test.ts`, `ticketsSlice.test.ts` |
-| React Testing Library | Component | `frontend/src/**/*.test.tsx` |
+| Vitest alone | Unit | `validators.test.js`, `ticketsSlice.test.js` |
+| React Testing Library | Component | `frontend/src/**/*.test.jsx` |
 | Supertest | API integration | `backend/tests/` |
 | Postman | Manual and scripted API checks | `docs/MiniDesk.postman_collection.json` |
 
@@ -30,9 +30,9 @@ The repository has 176 automated tests: 62 frontend and 114 backend. There's no 
 
 ### 3. Code Reference
 
-**File:** [backend/tests/validators.test.ts](../../backend/tests/validators.test.ts)
+**File:** [backend/tests/validators.test.js](../../backend/tests/validators.test.js)
 
-```ts
+```js
 it('trims the message', () => {
   expect(validateComment({ message: '  Hello  ' })).toEqual({ ok: true, data: { message: 'Hello' } })
 })
@@ -40,9 +40,9 @@ it('trims the message', () => {
 
 - A unit test on a plain function needs no server or database.
 
-**File:** [frontend/src/features/tickets/ticketsSlice.test.ts](../../frontend/src/features/tickets/ticketsSlice.test.ts)
+**File:** [frontend/src/features/tickets/ticketsSlice.test.js](../../frontend/src/features/tickets/ticketsSlice.test.js)
 
-```ts
+```js
 const state = reducer(initialState, fetchTickets.rejected(new Error('Server error'), 'request-1', query))
 
 expect(state.listStatus).toBe('failed')
@@ -100,17 +100,17 @@ React Testing Library tests components the way people use them. You find element
 
 ### 2. Project Implementation
 
-- **`LoginPage.test.tsx`:** validation, sign-in and server errors.
-- **`TicketForm.test.tsx`:** validation and trimmed values.
-- **`TicketListPage.test.tsx`:** rendering, search, filters and pagination.
-- **`ProtectedRoute.test.tsx`:** redirects and role checks.
-- **`testUtils.tsx`:** renders components with the providers they need.
+- **`LoginPage.test.jsx`:** validation, sign-in and server errors.
+- **`TicketForm.test.jsx`:** validation and trimmed values.
+- **`TicketListPage.test.jsx`:** rendering, search, filters and pagination.
+- **`ProtectedRoute.test.jsx`:** redirects and role checks.
+- **`testUtils.jsx`:** renders components with the providers they need.
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/LoginPage.test.tsx](../../frontend/src/pages/LoginPage.test.tsx)
+**File:** [frontend/src/pages/LoginPage.test.jsx](../../frontend/src/pages/LoginPage.test.jsx)
 
-```tsx
+```jsx
 await user.type(screen.getByLabelText('Email'), 'admin@example.com')
 await user.type(screen.getByLabelText('Password'), 'secret-password')
 await user.click(screen.getByRole('button', { name: 'Sign in' }))
@@ -122,13 +122,13 @@ await waitFor(() => expect(login).toHaveBeenCalledWith({ email: 'admin@example.c
 - `userEvent` simulates real typing and clicking.
 - `waitFor` retries until the check passes or times out, which is needed for async code.
 
-**File:** [frontend/src/test/testUtils.tsx](../../frontend/src/test/testUtils.tsx)
+**File:** [frontend/src/test/testUtils.jsx](../../frontend/src/test/testUtils.jsx)
 
-```tsx
+```jsx
 const store = configureStore({ reducer: { tickets: ticketsReducer, dashboard: dashboardReducer } })
 ```
 
-```tsx
+```jsx
 <MemoryRouter initialEntries={[route]}>
 ```
 
@@ -192,14 +192,14 @@ Too much mocking is risky, though. Tests can pass while the real parts don't wor
 
 ### 3. Code Reference
 
-**File:** [frontend/src/pages/TicketListPage.test.tsx](../../frontend/src/pages/TicketListPage.test.tsx)
+**File:** [frontend/src/pages/TicketListPage.test.jsx](../../frontend/src/pages/TicketListPage.test.jsx)
 
-```tsx
+```jsx
 vi.mock('../services/ticketService')
 const mockGetTickets = vi.mocked(getTickets)
 ```
 
-```tsx
+```jsx
 await user.type(screen.getByLabelText('Search tickets by title'), 'invoice')
 
 await waitFor(() => expect(lastQuery()).toMatchObject({ search: 'invoice' }))
@@ -208,17 +208,17 @@ expect(mockGetTickets).toHaveBeenCalledTimes(1)
 
 - Typing seven characters sends one request, which proves the debounce works.
 
-**File:** [frontend/src/services/api.test.ts](../../frontend/src/services/api.test.ts)
+**File:** [frontend/src/services/api.test.js](../../frontend/src/services/api.test.js)
 
-```ts
+```js
 api.defaults.adapter = async (config) => {
 ```
 
 - The adapter is the part of Axios that sends the request. Replacing only that means the real interceptors are still tested.
 
-**File:** [backend/tests/errors.test.ts](../../backend/tests/errors.test.ts)
+**File:** [backend/tests/errors.test.js](../../backend/tests/errors.test.js)
 
-```ts
+```js
 vi.spyOn(Ticket, 'countDocuments').mockImplementation(() => {
   throw new Error('secret database detail')
 })
@@ -273,33 +273,33 @@ Tests need known starting data, and must never touch real data, so a separate te
 
 ### 2. Project Implementation
 
-- **`tests/globalSetup.ts`:** starts a temporary MongoDB server, with a database called `minidesk_test`.
-- **`vitest.config.mts`:** sets the test environment, and runs files one at a time.
-- **`tests/helpers.ts`:** resets the data and logs users in.
-- **`tests/*.test.ts`:** cover auth, the middleware, CRUD, roles and errors.
+- **`tests/globalSetup.js`:** starts a temporary MongoDB server, with a database called `minidesk_test`.
+- **`vitest.config.js`:** sets the test environment, and runs files one at a time.
+- **`tests/helpers.js`:** resets the data and logs users in.
+- **`tests/*.test.js`:** cover auth, the middleware, CRUD, roles and errors.
 
 ### 3. Code Reference
 
-**File:** [backend/tests/globalSetup.ts](../../backend/tests/globalSetup.ts)
+**File:** [backend/tests/globalSetup.js](../../backend/tests/globalSetup.js)
 
-```ts
+```js
 server = await MongoMemoryServer.create()
 process.env.MONGODB_URI = server.getUri('minidesk_test')
 ```
 
 - Each run gets its own throwaway server, which takes priority over `backend/.env`.
 
-**File:** [backend/vitest.config.mts](../../backend/vitest.config.mts)
+**File:** [backend/vitest.config.js](../../backend/vitest.config.js)
 
-```ts
+```js
 fileParallelism: false,
 ```
 
 - Files run one at a time, because they share one database.
 
-**File:** [backend/tests/helpers.ts](../../backend/tests/helpers.ts)
+**File:** [backend/tests/helpers.js](../../backend/tests/helpers.js)
 
-```ts
+```js
 if (!mongoose.connection.name.endsWith('_test')) {
   throw new Error(`Refusing to reset "${mongoose.connection.name}". Tests may only use a database ending in _test.`)
 }
@@ -307,9 +307,9 @@ if (!mongoose.connection.name.endsWith('_test')) {
 
 - A second safety check, because this function deletes everything.
 
-**File:** [backend/tests/tickets.test.ts](../../backend/tests/tickets.test.ts)
+**File:** [backend/tests/tickets.test.js](../../backend/tests/tickets.test.js)
 
-```ts
+```js
 const other = await api.get(`/api/tickets/${ticket(1006)}`).set(asUser(liam))
 const missing = await api.get(`/api/tickets/${ticket(99999)}`).set(asUser(liam))
 
@@ -319,9 +319,9 @@ expect(other.body).toEqual(missing.body)
 
 - This proves a customer can't tell whether another customer's ticket exists.
 
-**File:** [backend/tests/authenticate.test.ts](../../backend/tests/authenticate.test.ts)
+**File:** [backend/tests/authenticate.test.js](../../backend/tests/authenticate.test.js)
 
-```ts
+```js
 it('accepts a correctly signed token, which proves the tests below fail for the right reason', async () => {
 ```
 

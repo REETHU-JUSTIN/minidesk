@@ -12,27 +12,27 @@ Very CPU-heavy work is the exception, because it does block the main thread.
 
 ### 2. Project Implementation
 
-MiniDesk's whole backend runs on Node. `server.ts` starts it, handlers are `async`, and bcrypt's async functions do their heavy hashing away from the main thread.
+MiniDesk's whole backend runs on Node. `server.js` starts it, handlers are `async`, and bcrypt's async functions do their heavy hashing away from the main thread.
 
 ### 3. Code Reference
 
-**File:** [backend/src/server.ts](../../backend/src/server.ts)
+**File:** [backend/src/server.js](../../backend/src/server.js)
 
-```ts
+```js
 async function start() {
   await connectDatabase()
 ```
 
-```ts
+```js
 const server = app.listen(env.port, (error) => {
 ```
 
 - `await` connects to the database before the server accepts requests.
 - `listen` starts the server. The callback runs when it's ready, or receives an error, for example if the port is taken.
 
-**File:** [backend/src/services/authService.ts](../../backend/src/services/authService.ts)
+**File:** [backend/src/services/authService.js](../../backend/src/services/authService.js)
 
-```ts
+```js
 const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 ```
 
@@ -100,9 +100,9 @@ MiniDesk has endpoints for auth, tickets, comments, dashboard and users. Success
 
 ### 3. Code Reference
 
-**File:** [backend/src/routes/ticketRoutes.ts](../../backend/src/routes/ticketRoutes.ts)
+**File:** [backend/src/routes/ticketRoutes.js](../../backend/src/routes/ticketRoutes.js)
 
-```ts
+```js
 ticketRoutes.get('/', ticketController.listTickets)
 ticketRoutes.get('/:id', ticketController.getTicket)
 ticketRoutes.get('/:id/comments', commentController.listComments)
@@ -110,13 +110,13 @@ ticketRoutes.get('/:id/comments', commentController.listComments)
 
 - Comments are nested under a ticket, because they belong to one.
 
-**File:** [backend/src/controllers/ticketController.ts](../../backend/src/controllers/ticketController.ts)
+**File:** [backend/src/controllers/ticketController.js](../../backend/src/controllers/ticketController.js)
 
-```ts
+```js
 res.status(201).json({ data: ticket })
 ```
 
-```ts
+```js
 res.status(204).send() // 204 means "done, and there's nothing to send back"
 ```
 
@@ -175,22 +175,22 @@ Express is a small framework for building Node web servers. A **route** connects
 
 ### 2. Project Implementation
 
-`app.ts` builds the app and mounts routers, and `server.ts` starts it. Each resource has its own route, controller and service file.
+`app.js` builds the app and mounts routers, and `server.js` starts it. Each resource has its own route, controller and service file.
 
 ### 3. Code Reference
 
-**File:** [backend/src/app.ts](../../backend/src/app.ts)
+**File:** [backend/src/app.js](../../backend/src/app.js)
 
-```ts
+```js
 app.use('/api/tickets', ticketRoutes)
 ```
 
 - Every route in `ticketRoutes` is mounted under this path.
 
-**File:** [backend/src/controllers/ticketController.ts](../../backend/src/controllers/ticketController.ts)
+**File:** [backend/src/controllers/ticketController.js](../../backend/src/controllers/ticketController.js)
 
-```ts
-export const getTicket: RequestHandler = async (req, res) => {
+```js
+export const getTicket = async (req, res) => {
   const ticket = await ticketService.getTicket(getCurrentUser(req), parseId(req.params.id))
   res.json({ data: ticket })
 }
@@ -198,10 +198,10 @@ export const getTicket: RequestHandler = async (req, res) => {
 
 - The controller reads the request, calls the service, and sends the response. It contains no rules.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
-export async function getTicket(user: PublicUser, ticketId: string): Promise<Ticket> {
+```js
+export async function getTicket(user, ticketId) {
   return requireVisibleTicket(user, ticketId)
 }
 ```
@@ -210,7 +210,7 @@ export async function getTicket(user: PublicUser, ticketId: string): Promise<Tic
 
 ### 4. Why We Used It
 
-Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: when I changed the database, first to PostgreSQL and later to MongoDB, the queries all went into services, and the routes and controllers stayed as they were. Separating `app.ts` from `server.ts` also lets tests import the app without starting a real server.
+Putting everything in route handlers quickly becomes unmanageable. Layers paid off in practice: when I changed the database, first to PostgreSQL and later to MongoDB, the queries all went into services, and the routes and controllers stayed as they were. Separating `app.js` from `server.js` also lets tests import the app without starting a real server.
 
 ### 5. Real-Time Scenario
 
@@ -228,7 +228,7 @@ An agent opens ticket 1006:
 - **Theory:** What's the difference between a controller and a service?
 - **Theory:** What changed in Express 5?
 - **Practical:** How did you structure your backend?
-- **Practical:** Why are `app.ts` and `server.ts` separate?
+- **Practical:** Why are `app.js` and `server.js` separate?
 
 ### 7. Project-Based Answers
 
@@ -244,8 +244,8 @@ The change that matters most here is that rejected Promises from async handlers 
 **How did you structure your backend?**
 In layers: `routes`, `middleware`, `controllers`, `services`, plus `config` and `utils`. A request flows through them in that order.
 
-**Why separate `app.ts` and `server.ts`?**
-`app.ts` builds the app and `server.ts` starts it. Tests can import the app without opening a port.
+**Why separate `app.js` and `server.js`?**
+`app.js` builds the app and `server.js` starts it. Tests can import the app without opening a port.
 
 ### 8. Follow-up Questions
 
@@ -271,22 +271,22 @@ Order matters, because they run in the order they're added.
 
 | Middleware | File | Job |
 |---|---|---|
-| `cors` | `app.ts` | Allows the frontend's origin |
-| `express.json` | `app.ts` | Parses JSON bodies |
-| `authenticate` | `authenticate.ts` | Identifies the user from the token |
-| `authorize` | `authorize.ts` | Checks the user's role |
-| `validateBody` | `validate.ts` | Checks and cleans the body |
-| `notFoundHandler`, `errorHandler` | `errorHandler.ts` | Handle unmatched routes and errors |
+| `cors` | `app.js` | Allows the frontend's origin |
+| `express.json` | `app.js` | Parses JSON bodies |
+| `authenticate` | `authenticate.js` | Identifies the user from the token |
+| `authorize` | `authorize.js` | Checks the user's role |
+| `validateBody` | `validate.js` | Checks and cleans the body |
+| `notFoundHandler`, `errorHandler` | `errorHandler.js` | Handle unmatched routes and errors |
 
 ### 3. Code Reference
 
-**File:** [backend/src/routes/ticketRoutes.ts](../../backend/src/routes/ticketRoutes.ts)
+**File:** [backend/src/routes/ticketRoutes.js](../../backend/src/routes/ticketRoutes.js)
 
-```ts
+```js
 ticketRoutes.use(authenticate)
 ```
 
-```ts
+```js
 ticketRoutes.post('/', authorize('customer'), validateBody(validateCreateTicket), ticketController.createTicket)
 ticketRoutes.delete('/:id', authorize('admin'), ticketController.deleteTicket)
 ```
@@ -294,10 +294,10 @@ ticketRoutes.delete('/:id', authorize('admin'), ticketController.deleteTicket)
 - `use(authenticate)` protects every route below it, so none can forget to require a login.
 - Each route then adds what it needs, and these run from left to right.
 
-**File:** [backend/src/middleware/authorize.ts](../../backend/src/middleware/authorize.ts)
+**File:** [backend/src/middleware/authorize.js](../../backend/src/middleware/authorize.js)
 
-```ts
-export function authorize(...allowedRoles: UserRole[]): RequestHandler {
+```js
+export function authorize(...allowedRoles) {
   return (req, _res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
       next(new AppError(403, 'You don\'t have permission to do that.'))
@@ -311,9 +311,9 @@ export function authorize(...allowedRoles: UserRole[]): RequestHandler {
 - This is a function that **returns** middleware, so each route can pass its own roles.
 - `next(error)` skips to the error handler, and `next()` continues.
 
-**File:** [backend/src/app.ts](../../backend/src/app.ts)
+**File:** [backend/src/app.js](../../backend/src/app.js)
 
-```ts
+```js
 app.use(notFoundHandler)
 app.use(errorHandler)
 ```
@@ -361,7 +361,7 @@ Yes: `authenticate`, `authorize`, `validateBody` and the error handlers. `author
 ### 8. Follow-up Questions
 
 - **How does Express recognize error middleware?** By its four parameters. That's why `errorHandler` keeps an unused `_next`.
-- **How does `req.user` reach the controller?** `authenticate` sets it on the same request object, and I teach TypeScript about it in `express.d.ts`.
+- **How does `req.user` reach the controller?** `authenticate` sets it on the same request object, which is then passed along to the controller.
 - **What happens if you call `next()` after sending a response?** Later code may try to respond again, causing an error. That's why I `return` right after.
 
 ---
@@ -381,23 +381,23 @@ Instead of handling errors in every route, code throws an error and one function
 
 ### 3. Code Reference
 
-**File:** [backend/src/utils/AppError.ts](../../backend/src/utils/AppError.ts)
+**File:** [backend/src/utils/AppError.js](../../backend/src/utils/AppError.js)
 
-```ts
+```js
 export class AppError extends Error {
-  statusCode: number
+  statusCode
 ```
 
-**File:** [backend/src/middleware/errorHandler.ts](../../backend/src/middleware/errorHandler.ts)
+**File:** [backend/src/middleware/errorHandler.js](../../backend/src/middleware/errorHandler.js)
 
-```ts
+```js
 if (error instanceof AppError) {
   res.status(error.statusCode).json({ error: { message: error.message, details: error.details } })
   return
 }
 ```
 
-```ts
+```js
 console.error(error)
 res.status(500).json({ error: { message: 'Something went wrong. Please try again.' } })
 ```
@@ -405,9 +405,9 @@ res.status(500).json({ error: { message: 'Something went wrong. Please try again
 - `AppError` messages are written for clients, so they're safe to send.
 - Anything else is a bug: full details go to the server's log, and the client gets a generic message.
 
-**File:** [backend/src/services/ticketService.ts](../../backend/src/services/ticketService.ts)
+**File:** [backend/src/services/ticketService.js](../../backend/src/services/ticketService.js)
 
-```ts
+```js
 throw new AppError(404, 'We couldn\'t find that ticket.')
 ```
 
@@ -456,31 +456,27 @@ Never trust data from clients. Even with frontend validation, anyone can send an
 
 ### 2. Project Implementation
 
-`utils/validators.ts` has a function per request type. `validateBody` applies them as middleware. `parseId` and `parseTicketQuery` handle URL values.
+`utils/validators.js` has a function per request type. `validateBody` applies them as middleware. `parseId` and `parseTicketQuery` handle URL values.
 
 ### 3. Code Reference
 
-**File:** [backend/src/utils/validators.ts](../../backend/src/utils/validators.ts)
+**File:** [backend/src/utils/validators.js](../../backend/src/utils/validators.js)
 
-```ts
-export type ValidationResult<T> = { ok: true; data: T } | { ok: false; errors: Record<string, string> }
-```
-
-```ts
+```js
 if (password.length < 8 || Buffer.byteLength(password) > 72) errors.password = 'Password must be 8 to 72 characters.'
 ```
 
-```ts
+```js
 return { ok: true, data: { name, email, password } }
 ```
 
-- `ok` lets TypeScript know which shape it's dealing with. This is a discriminated union.
+- `ok` says which result it is, so callers check it before reading `data` or `errors`.
 - The returned object contains only the named fields, so a sent `role` is simply dropped.
 - bcrypt ignores everything past 72 bytes, so longer passwords are refused rather than silently cut short.
 
-**File:** [backend/src/middleware/validate.ts](../../backend/src/middleware/validate.ts)
+**File:** [backend/src/middleware/validate.js](../../backend/src/middleware/validate.js)
 
-```ts
+```js
 req.body = result.data
 ```
 
@@ -537,25 +533,25 @@ The validator drops any `role` field, and `register` always sets `customer`. Adm
 
 ### 2. Project Implementation
 
-`config/env.ts` loads and checks settings, and stops startup if any are missing. `.env.example` documents them, and `.env` is ignored by Git. `cors` allows only the frontend's origin.
+`config/env.js` loads and checks settings, and stops startup if any are missing. `.env.example` documents them, and `.env` is ignored by Git. `cors` allows only the frontend's origin.
 
 ### 3. Code Reference
 
-**File:** [backend/src/config/env.ts](../../backend/src/config/env.ts)
+**File:** [backend/src/config/env.js](../../backend/src/config/env.js)
 
-```ts
+```js
 if (!value) throw new Error(`Missing environment variable: ${name}. See .env.example.`)
 ```
 
-```ts
+```js
 if (jwtSecret.length < 32) {
 ```
 
 - Failing at startup is much better than failing later on someone's request.
 
-**File:** [backend/src/app.ts](../../backend/src/app.ts)
+**File:** [backend/src/app.js](../../backend/src/app.js)
 
-```ts
+```js
 app.use(cors({ origin: env.clientOrigin })) // only our frontend may call this API from a browser
 ```
 
